@@ -1,16 +1,14 @@
 module Template where
 
 
-import qualified Data.Text as T
-
 import Data.Array
 import Text.Regex.PCRE
 
 
 data Token =
-    Text        { content :: String, line :: Int }                  |
-    Block       { content :: String, line :: Int, name :: String }  |
-    Comment     { content :: String, line :: Int }                  |
+    Tag         { content :: String, line :: Int }  |
+    Text        { content :: String, line :: Int }  |
+    Comment     { content :: String, line :: Int }  |
     Variable    { content :: String, line :: Int }
     deriving (Show)
 
@@ -18,72 +16,124 @@ data Token =
 regexTag = "({%.*?%}|{{.*?}}|{#.*?#})" :: String
 
 
+-- | Count line breaks in text
+--
+-- Examples:
+--
+-- >>> countLineBreaks "foo\nbar\r\nbang"
+-- 2
+countLineBreaks :: String -> Int
+countLineBreaks text =
+    countLineBreaksT text 0
+
+countLineBreaksT :: String -> Int -> Int
+countLineBreaksT [] count = count
+countLineBreaksT (x:y:xs) count
+    | x == '\n' =
+        countLineBreaksT (y:xs) (count + 1)
+    | x == '\r' && y == '\n' =
+        countLineBreaksT xs (count + 1)
+    | otherwise =
+        countLineBreaksT (y:xs) count
+countLineBreaksT (x:xs) count
+    | x == '\n' =
+        countLineBreaksT xs (count + 1)
+    | otherwise =
+        countLineBreaksT xs count
+
+
 -- | Tokenize template string
 --
 -- Examples:
 --
--- >>> tokenize "foo{{ test }}bar"
--- [Text {content = "foo", line = 1},Variable {content = "test", line = 1},Text {content = "bar", line = 1}]
+-- >>> tokenize "foo\n{{ test }}\r\nbar"
+-- [Text {content = "foo\n", line = 1},Variable {content = "test", line = 2},Text {content = "\r\nbar", line = 3}]
+--
+-- >>> tokenize "foo{# test a #}"
+-- [Text {content = "foo", line = 1},Comment {content = "test a", line = 1}]
+--
+-- >>> tokenize "foo\n{% foo %}"
+-- [Text {content = "foo\n", line = 1},Tag {content = "foo", line = 2}]
 tokenize :: String -> [Token]
 tokenize text =
-    tokenizeAcc text []
+    tokenizeAcc text 1 []
 
 
-tokenizeAcc :: String -> [Token] -> [Token]
-tokenizeAcc str tokens =
+tokenizeAcc :: String -> Int -> [Token] -> [Token]
+tokenizeAcc str line tokens =
     case nextPos str of
         Nothing ->
             if str == "" then
                 reverse tokens
             else
-                let token = Text { content = str, line = 1 }
+                let newline = line + (countLineBreaks str)
                 in
-                    reverse (token:tokens)
+                    reverse ((getTextToken str newline):tokens)
 
         Just (first, last) ->
-            let text = T.pack str
+            if first > 0 then
+                let (head, rest) = splitAt first str
+                    newline = line + (countLineBreaks head)
                 in
-                    if first > 0 then
-                        let (head, rest) = T.splitAt first text
-                            reststr = T.unpack rest
-                            headstr = T.unpack head
-                            node = Text { content = headstr, line = 1 }
-                        in
-                            tokenizeAcc reststr (node:tokens)
-                    else
-                        let (head, rest) = T.splitAt last text
-                            reststr = T.unpack rest
-                        in
-                            case getToken head 1 of
-                                Nothing ->
-                                    tokenizeAcc reststr tokens
-                                Just token ->
-                                    tokenizeAcc reststr (token:tokens)
+                    tokenizeAcc rest newline ((getTextToken head line):tokens)
+            else
+                let (head, rest) = splitAt last str
+                    newline = line + (countLineBreaks head)
+                in
+                    case getToken head line of
+                        Nothing ->
+                            tokenizeAcc rest newline tokens
+                        Just token ->
+                            tokenizeAcc rest newline (token:tokens)
+
+
+-- | Get text token
+--
+-- Examples:
+--
+-- >>> getTextToken "foobar" 2
+-- Text {content = "foobar", line = 2}
+getTextToken :: String -> Int -> Token
+getTextToken str line =
+    Text { content = str, line = line }
 
 
 -- | Get a token for the given string
 --
 -- Examples:
 --
--- >>> getToken (T.pack "{{ foo }}") 1
+-- >>> getToken "{{ foo }}" 1
 -- Just (Variable {content = "foo", line = 1})
-getToken :: T.Text -> Int -> Maybe Token
+--
+-- >>> getToken "{# bar #}" 1
+-- Just (Comment {content = "bar", line = 1})
+--
+-- >>> getToken "{% x y z %}" 1
+-- Just (Tag {content = "x y z", line = 1})
+getToken :: String -> Int -> Maybe Token
 getToken text line =
-    if T.pack "{{" `T.isPrefixOf` text then
-        Just Variable { content = T.unpack $ tagText text, line = line }
-    else
-        Nothing
+    case take 2 text of
+        "{{" ->
+            Just Variable { content = tagText text, line = line }
+        "{#" ->
+            Just Comment { content = tagText text, line = line }
+        "{%" ->
+            Just Tag { content = tagText text, line = line }
+        _ ->
+            Nothing
     
 
 -- | Text inside tag
 --
 -- Examples:
 --
--- >>> tagText (T.pack "{% foo %}")
+-- >>> tagText "{% foo %}"
 -- "foo"
-tagText :: T.Text -> T.Text
+tagText :: String -> String
 tagText text =
-    T.strip $ T.drop 2 $ T.dropEnd 2 $ text
+    let trim = (unwords . words)
+    in
+        trim $ drop 2 $ take ((length text) - 2) $ text
 
 
 -- | Find next parsing position
