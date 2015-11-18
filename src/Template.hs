@@ -1,9 +1,20 @@
+{-# LANGUAGE ExistentialQuantification #-}
+
 module Template where
 
+import Prelude hiding (lookup)
 
+import Data.Map.Strict (Map, fromList, lookup)
 import Data.Array
 import Text.Regex.PCRE
 
+
+data Showable = forall a . (Show a) => Showable a
+
+instance Show Showable where
+    show (Showable a) = show a
+
+type Context = Map String Showable
 
 data Token =
     Tag         { content :: String, line :: Int }  |
@@ -54,6 +65,9 @@ countLineBreaksT (x:xs) count
 --
 -- >>> tokenize "foo\n{% foo %}"
 -- [Text {content = "foo\n", line = 1},Tag {content = "foo", line = 2}]
+--
+-- >>> tokenize "a{{ b }}c{{ d }}"
+-- [Text {content = "a", line = 1},Variable {content = "b", line = 1},Text {content = "c", line = 1},Variable {content = "d", line = 1}]
 tokenize :: String -> [Token]
 tokenize text =
     tokenizeAcc text 1 []
@@ -161,3 +175,67 @@ nextPos text =
             Nothing
         else
             Just (offset, (offset + len))
+
+
+-- | Build context
+--
+-- Examples:
+--
+-- >>> let foo = buildContext [("foo", Showable "bar")]
+-- >>> lookup "foo" foo
+-- Just "bar"
+--
+-- >>> let bar = buildContext [("foo", Showable "bar"), ("bar", Showable 2)]
+-- >>> lookup "bar" bar
+-- Just 2
+buildContext :: [(String, Showable)] -> Context
+buildContext list =
+    fromList list
+
+
+-- | Parse tokens
+--
+-- Examples:
+--
+-- >>> let ctx = buildContext [("foo", Showable "bar"), ("bar", Showable 2)]
+-- >>> lookup "foo" ctx
+-- Just "bar"
+-- >>> parseTokens ctx [Variable { content = "foo", line = 1 }]
+-- ["bar"]
+-- >>> parseTokens ctx [Variable { content = "unknown", line = 1 }]
+-- [""]
+parseTokens :: Context -> [Token] -> [String]
+parseTokens ctx tokens =
+    map (parseToken ctx) tokens
+
+
+-- | Parse token
+--
+-- Examples:
+--
+-- >>> let ctx = buildContext [("foo", Showable "foo")]
+-- >>> parseToken ctx Variable { content = "foo", line = 1 }
+-- "foo"
+parseToken :: Context -> Token -> String
+parseToken ctx token =
+    case token of
+        Variable { content = content, line = _ } ->
+            case lookup content ctx of
+                Just a -> show a
+                _ -> ""
+        Text { content = content, line = _ } ->
+            content
+        _ ->
+            ""
+
+
+-- | Parse string
+--
+-- Examples:
+--
+-- >>> let ctx = buildContext [("foo", Showable "bar"), ("bar", Showable 2)]
+-- >>> parseString ctx "abc{{ foo }}def{{ bar }}x"
+-- "abcbardef2x"
+parseString :: Context -> String -> String
+parseString ctx text =
+    concat $ parseTokens ctx $ tokenize text
