@@ -9,12 +9,7 @@ import Data.Array
 import Text.Regex.PCRE
 
 
-data Showable = forall a . (Show a) => Showable a
-
-instance Show Showable where
-    show (Showable a) = show a
-
-type Context = Map String Showable
+type Context = Map String String
 
 data Token =
     Tag         { content :: String, line :: Int }  |
@@ -181,14 +176,14 @@ nextPos text =
 --
 -- Examples:
 --
--- >>> let foo = buildContext [("foo", Showable "bar")]
+-- >>> let foo = buildContext [("foo", "bar")]
 -- >>> lookup "foo" foo
 -- Just "bar"
 --
--- >>> let bar = buildContext [("foo", Showable "bar"), ("bar", Showable 2)]
+-- >>> let bar = buildContext [("foo", "bar"), ("bar", show 2)]
 -- >>> lookup "bar" bar
--- Just 2
-buildContext :: [(String, Showable)] -> Context
+-- Just "2"
+buildContext :: [(String, String)] -> Context
 buildContext list =
     fromList list
 
@@ -197,7 +192,7 @@ buildContext list =
 --
 -- Examples:
 --
--- >>> let ctx = buildContext [("foo", Showable "bar"), ("bar", Showable 2)]
+-- >>> let ctx = buildContext [("foo", "bar"), ("bar", show 2)]
 -- >>> lookup "foo" ctx
 -- Just "bar"
 -- >>> parseTokens ctx [Variable { content = "foo", line = 1 }]
@@ -213,7 +208,7 @@ parseTokens ctx tokens =
 --
 -- Examples:
 --
--- >>> let ctx = buildContext [("foo", Showable "foo")]
+-- >>> let ctx = buildContext [("foo", "foo")]
 -- >>> parseToken ctx Variable { content = "foo", line = 1 }
 -- "foo"
 parseToken :: Context -> Token -> String
@@ -221,7 +216,7 @@ parseToken ctx token =
     case token of
         Variable { content = content, line = _ } ->
             case lookup content ctx of
-                Just a -> show a
+                Just a -> a
                 _ -> ""
         Text { content = content, line = _ } ->
             content
@@ -233,7 +228,7 @@ parseToken ctx token =
 --
 -- Examples:
 --
--- >>> let ctx = buildContext [("foo", Showable "bar"), ("bar", Showable 2)]
+-- >>> let ctx = buildContext [("foo", "bar"), ("bar", show 2)]
 -- >>> parseString ctx "abc{{ foo }}def{{ bar }}x"
 -- "abcbardef2x"
 parseString :: Context -> String -> String
