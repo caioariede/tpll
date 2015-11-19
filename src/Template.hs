@@ -176,15 +176,15 @@ nextPos text =
 --
 -- Examples:
 --
--- >>> let foo = buildContext [("foo", "bar")]
+-- >>> let foo = ctx [("foo", "bar")]
 -- >>> lookup "foo" foo
 -- Just "bar"
 --
--- >>> let bar = buildContext [("foo", "bar"), ("bar", show 2)]
+-- >>> let bar = ctx [("foo", "bar"), ("bar", show 2)]
 -- >>> lookup "bar" bar
 -- Just "2"
-buildContext :: [(String, String)] -> Context
-buildContext list =
+ctx :: [(String, String)] -> Context
+ctx list =
     fromList list
 
 
@@ -192,30 +192,30 @@ buildContext list =
 --
 -- Examples:
 --
--- >>> let ctx = buildContext [("foo", "bar"), ("bar", show 2)]
--- >>> lookup "foo" ctx
+-- >>> let ctx' = ctx [("foo", "bar"), ("bar", show 2)]
+-- >>> lookup "foo" ctx'
 -- Just "bar"
--- >>> parseTokens ctx [Variable { content = "foo", line = 1 }]
+-- >>> parseTokens ctx' [Variable { content = "foo", line = 1 }]
 -- ["bar"]
--- >>> parseTokens ctx [Variable { content = "unknown", line = 1 }]
+-- >>> parseTokens ctx' [Variable { content = "unknown", line = 1 }]
 -- [""]
 parseTokens :: Context -> [Token] -> [String]
-parseTokens ctx tokens =
-    map (parseToken ctx) tokens
+parseTokens ctx' tokens =
+    map (parseToken ctx') tokens
 
 
 -- | Parse token
 --
 -- Examples:
 --
--- >>> let ctx = buildContext [("foo", "foo")]
--- >>> parseToken ctx Variable { content = "foo", line = 1 }
+-- >>> let ctx' = ctx [("foo", "foo")]
+-- >>> parseToken ctx' Variable { content = "foo", line = 1 }
 -- "foo"
 parseToken :: Context -> Token -> String
-parseToken ctx token =
+parseToken ctx' token =
     case token of
         Variable { content = content, line = _ } ->
-            case lookup content ctx of
+            case lookup content ctx' of
                 Just a -> a
                 _ -> ""
         Text { content = content, line = _ } ->
@@ -228,9 +228,9 @@ parseToken ctx token =
 --
 -- Examples:
 --
--- >>> let ctx = buildContext [("foo", "bar"), ("bar", show 2)]
--- >>> parseString ctx "abc{{ foo }}def{{ bar }}x"
+-- >>> let ctx' = ctx [("foo", "bar"), ("bar", show 2)]
+-- >>> parseString ctx' "abc{{ foo }}def{{ bar }}x"
 -- "abcbardef2x"
 parseString :: Context -> String -> String
-parseString ctx text =
-    concat $ parseTokens ctx $ tokenize text
+parseString ctx' text =
+    concat $ parseTokens ctx' $ tokenize text
