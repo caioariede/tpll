@@ -7,7 +7,9 @@ import Prelude hiding (lookup)
 import Data.Map.Strict (Map, fromList, lookup)
 import Data.Array
 import Text.Regex.PCRE
-
+import Data.Time.Clock (getCurrentTime)
+import Data.Time.Format (formatTime, defaultTimeLocale)
+import Control.Monad (liftM2)
 
 type Context = Map String String
 
@@ -18,7 +20,8 @@ data Token =
     Variable    { content :: String, line :: Int }
     deriving (Show)
 
-type Tag = Context -> Token -> [Token] -> ([Token], String)
+type TagResult = ([Token], IO String)
+type Tag = Context -> Token -> [Token] -> TagResult
 type Tags = Map String Tag
 
 
@@ -197,22 +200,24 @@ tags list =
 
 
 
--- | now template tag
+-- | template tag: firstof
 --
 -- Examples:
 --
 -- >>> let ctx' = ctx [("a", ""), ("b", "x")]
--- >>> firstOfTag ctx' (Tag { content = "firstof a b", line = 1 }) []
--- ([],"x")
+-- >>> let (_, r) = firstOfTag ctx' (Tag { content = "firstof a b", line = 1 }) []
+-- >>> r
+-- "x"
 --
--- >>> firstOfTag ctx' (Tag { content = "firstof a c", line = 1 }) []
--- ([],"")
-firstOfTag :: Context -> Token -> [Token] -> ([Token], String)
+-- >>> let (_, r) = firstOfTag ctx' (Tag { content = "firstof a c", line = 1 }) []
+-- >>> r
+-- ""
+firstOfTag :: Context -> Token -> [Token] -> TagResult
 firstOfTag ctx' token tokens =
     let Tag { content = content, line = _ } = token
         (_, parts) = splitAt 1 $ words content
     in
-        (tokens, firstOfTag' ctx' parts)
+        (tokens, return $ firstOfTag' ctx' parts)
 
 firstOfTag' :: Context -> [String] -> String
 firstOfTag' _ [] = ""
@@ -227,17 +232,40 @@ firstOfTag' ctx' (x:xs) =
             firstOfTag' ctx' xs
 
 
+-- | template tag: now
+--
+-- Examples:
+--
+-- >>> let ctx' = ctx []
+-- >>> let expected = fmap (formatTime defaultTimeLocale "%Y-%m-%d %H:%I:%S") getCurrentTime
+-- >>> let (_, r) = nowTag ctx' (Tag { content = "now", line = 1 }) []
+-- >>> :{
+--  do
+--      a <- expected
+--      b <- r
+--      print $ show $ a == b
+-- :}
+-- "True"
+nowTag :: Context -> Token -> [Token] -> TagResult
+nowTag ctx' token tokens =
+    let result = fmap (formatTime defaultTimeLocale "%Y-%m-%d %H:%I:%S") getCurrentTime
+    in
+        ([], result)
+
+
 -- | Consume tag token
 --
 -- Examples:
 --
 -- >>> let ctx' = ctx [("a", ""), ("b", "x")]
 -- >>> let tags' = tags [("firstof", firstOfTag)]
--- >>> consumeTag ctx' tags' (Tag { content = "firstof a b", line = 1 }) []
--- ([],"x")
--- >>> consumeTag ctx' tags' (Tag { content = "x", line = 1 }) []
--- ([],"<error>")
-consumeTag :: Context -> Tags -> Token -> [Token] -> ([Token], String)
+-- >>> let (_, r) = consumeTag ctx' tags' (Tag { content = "firstof a b", line = 1 }) []
+-- >>> r
+-- "x"
+-- >>> let (_, r) = consumeTag ctx' tags' (Tag { content = "x", line = 1 }) []
+-- >>> r
+-- "<error>"
+consumeTag :: Context -> Tags -> Token -> [Token] -> TagResult
 consumeTag ctx' tags' token tokens =
     let Tag { content = content, line = _ } = token
         ([name], parts) = splitAt 1 $ words content
@@ -245,7 +273,7 @@ consumeTag ctx' tags' token tokens =
         case lookup name tags' of
             Just fn -> fn ctx' token tokens
             Nothing ->
-                (tokens, "<error>")
+                (tokens, return "<error>")
 
 
 -- | Parse tokens
@@ -256,15 +284,17 @@ consumeTag ctx' tags' token tokens =
 -- >>> let tags' = tags []
 -- >>> lookup "foo" ctx'
 -- Just "bar"
--- >>> parseTokens ctx' tags' [Variable { content = "foo", line = 1 }]
--- ["bar"]
--- >>> parseTokens ctx' tags' [Variable { content = "unknown", line = 1 }]
--- [""]
-parseTokens :: Context -> Tags -> [Token] -> [String]
+-- >>> let [r] = parseTokens ctx' tags' [Variable { content = "foo", line = 1 }]
+-- >>> r
+-- "bar"
+-- >>> let [r] = parseTokens ctx' tags' [Variable { content = "unknown", line = 1 }]
+-- >>> r
+-- ""
+parseTokens :: Context -> Tags -> [Token] -> [IO String]
 parseTokens ctx' tags' tokens =
     parseTokens' ctx' tags' tokens []
 
-parseTokens' :: Context -> Tags -> [Token] -> [String] -> [String]
+parseTokens' :: Context -> Tags -> [Token] -> [IO String] -> [IO String]
 parseTokens' _ _ [] acc = reverse acc
 parseTokens' ctx' tags' tokens acc =
     let (newtokens, result) = parseToken ctx' tags' tokens
@@ -278,21 +308,22 @@ parseTokens' ctx' tags' tokens acc =
 --
 -- >>> let ctx' = ctx [("foo", "foo")]
 -- >>> let tags' = tags []
--- >>> parseToken ctx' tags' [Variable { content = "foo", line = 1 }]
--- ([],"foo")
-parseToken :: Context -> Tags -> [Token] -> ([Token], String)
+-- >>> let (_, r) = parseToken ctx' tags' [Variable { content = "foo", line = 1 }]
+-- >>> r
+-- "foo"
+parseToken :: Context -> Tags -> [Token] -> TagResult
 parseToken ctx' tags' (token:tokens) =
     case token of
         Variable { content = content, line = _ } ->
             case lookup content ctx' of
-                Just a -> (tokens, a)
-                _ -> (tokens, "")
+                Just a -> (tokens, return a)
+                _ -> (tokens, return "")
         Text { content = content, line = _ } ->
-            (tokens, content)
+            (tokens, return content)
         Tag { content = _, line = _ } ->
             consumeTag ctx' tags' token tokens
         _ ->
-            (tokens, "")
+            (tokens, return "")
 
 
 -- | Parse string
@@ -309,6 +340,6 @@ parseToken ctx' tags' (token:tokens) =
 --
 -- >>> parseString ctx' tags' "foo{% firstof bang bar %}bar"
 -- "foo2bar"
-parseString :: Context -> Tags -> String -> String
+parseString :: Context -> Tags -> String -> IO String
 parseString ctx' tags' text =
-    concat $ parseTokens ctx' tags' $ tokenize text
+    foldl1 (liftM2 (++)) $ parseTokens ctx' tags' $ tokenize text
