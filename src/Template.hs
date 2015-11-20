@@ -18,6 +18,9 @@ data Token =
     Variable    { content :: String, line :: Int }
     deriving (Show)
 
+type Tag = Context -> Token -> [Token] -> ([Token], String)
+type Tags = Map String Tag
+
 
 regexTag = "({%.*?%}|{{.*?}}|{#.*?#})" :: String
 
@@ -188,20 +191,85 @@ ctx list =
     fromList list
 
 
+tags :: [(String, Tag)] -> Tags
+tags list =
+    fromList list
+
+
+
+-- | now template tag
+--
+-- Examples:
+--
+-- >>> let ctx' = ctx [("a", ""), ("b", "x")]
+-- >>> firstOfTag ctx' (Tag { content = "firstof a b", line = 1 }) []
+-- ([],"x")
+--
+-- >>> firstOfTag ctx' (Tag { content = "firstof a c", line = 1 }) []
+-- ([],"")
+firstOfTag :: Context -> Token -> [Token] -> ([Token], String)
+firstOfTag ctx' token tokens =
+    let Tag { content = content, line = _ } = token
+        (_, parts) = splitAt 1 $ words content
+    in
+        (tokens, firstOfTag' ctx' parts)
+
+firstOfTag' :: Context -> [String] -> String
+firstOfTag' _ [] = ""
+firstOfTag' ctx' (x:xs) =
+    case lookup x ctx' of
+        Just x ->
+            if x == "" then
+                firstOfTag' ctx' xs
+            else
+                x
+        Nothing ->
+            firstOfTag' ctx' xs
+
+
+-- | Consume tag token
+--
+-- Examples:
+--
+-- >>> let ctx' = ctx [("a", ""), ("b", "x")]
+-- >>> let tags' = tags [("firstof", firstOfTag)]
+-- >>> consumeTag ctx' tags' (Tag { content = "firstof a b", line = 1 }) []
+-- ([],"x")
+-- >>> consumeTag ctx' tags' (Tag { content = "x", line = 1 }) []
+-- ([],"<error>")
+consumeTag :: Context -> Tags -> Token -> [Token] -> ([Token], String)
+consumeTag ctx' tags' token tokens =
+    let Tag { content = content, line = _ } = token
+        ([name], parts) = splitAt 1 $ words content
+    in
+        case lookup name tags' of
+            Just fn -> fn ctx' token tokens
+            Nothing ->
+                (tokens, "<error>")
+
+
 -- | Parse tokens
 --
 -- Examples:
 --
 -- >>> let ctx' = ctx [("foo", "bar"), ("bar", show 2)]
+-- >>> let tags' = tags []
 -- >>> lookup "foo" ctx'
 -- Just "bar"
--- >>> parseTokens ctx' [Variable { content = "foo", line = 1 }]
+-- >>> parseTokens ctx' tags' [Variable { content = "foo", line = 1 }]
 -- ["bar"]
--- >>> parseTokens ctx' [Variable { content = "unknown", line = 1 }]
+-- >>> parseTokens ctx' tags' [Variable { content = "unknown", line = 1 }]
 -- [""]
-parseTokens :: Context -> [Token] -> [String]
-parseTokens ctx' tokens =
-    map (parseToken ctx') tokens
+parseTokens :: Context -> Tags -> [Token] -> [String]
+parseTokens ctx' tags' tokens =
+    parseTokens' ctx' tags' tokens []
+
+parseTokens' :: Context -> Tags -> [Token] -> [String] -> [String]
+parseTokens' _ _ [] acc = reverse acc
+parseTokens' ctx' tags' tokens acc =
+    let (newtokens, result) = parseToken ctx' tags' tokens
+    in
+        parseTokens' ctx' tags' newtokens (result:acc)
 
 
 -- | Parse token
@@ -209,28 +277,38 @@ parseTokens ctx' tokens =
 -- Examples:
 --
 -- >>> let ctx' = ctx [("foo", "foo")]
--- >>> parseToken ctx' Variable { content = "foo", line = 1 }
--- "foo"
-parseToken :: Context -> Token -> String
-parseToken ctx' token =
+-- >>> let tags' = tags []
+-- >>> parseToken ctx' tags' [Variable { content = "foo", line = 1 }]
+-- ([],"foo")
+parseToken :: Context -> Tags -> [Token] -> ([Token], String)
+parseToken ctx' tags' (token:tokens) =
     case token of
         Variable { content = content, line = _ } ->
             case lookup content ctx' of
-                Just a -> a
-                _ -> ""
+                Just a -> (tokens, a)
+                _ -> (tokens, "")
         Text { content = content, line = _ } ->
-            content
+            (tokens, content)
+        Tag { content = _, line = _ } ->
+            consumeTag ctx' tags' token tokens
         _ ->
-            ""
+            (tokens, "")
 
 
 -- | Parse string
 --
 -- Examples:
 --
--- >>> let ctx' = ctx [("foo", "bar"), ("bar", show 2)]
--- >>> parseString ctx' "abc{{ foo }}def{{ bar }}x"
+-- >>> let ctx' = ctx [("foo", "bar"), ("bar", show 2), ("bang", "")]
+-- >>> let tags' = tags [("firstof", firstOfTag)]
+-- >>> parseString ctx' tags' "abc{{ foo }}def{{ bar }}x"
 -- "abcbardef2x"
-parseString :: Context -> String -> String
-parseString ctx' text =
-    concat $ parseTokens ctx' $ tokenize text
+--
+-- >>> parseString ctx' tags' "foo{% firstof bang %}bar"
+-- "foobar"
+--
+-- >>> parseString ctx' tags' "foo{% firstof bang bar %}bar"
+-- "foo2bar"
+parseString :: Context -> Tags -> String -> String
+parseString ctx' tags' text =
+    concat $ parseTokens ctx' tags' $ tokenize text
