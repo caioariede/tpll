@@ -18,7 +18,7 @@ cabal-version:       >=1.10
 
 library
     exposed-modules:     
-        Template
+        Tpll
     -- other-modules:       
     -- other-extensions:    
     build-depends:       base >=4.8 && <4.9, regex-pcre ==0.94.4, array, text, containers

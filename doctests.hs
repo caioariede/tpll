@@ -1,3 +1,3 @@
 import Test.DocTest
 
-main = doctest ["-isrc", "src/Template.hs"]
+main = doctest ["-isrc", "src/Tpll.hs"]
