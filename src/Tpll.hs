@@ -1,5 +1,5 @@
-module Template where
+module Tpll where
 
-import Tpll.Tokenizer (tokenize, Token(Tag, Text, Variable, content, line))
-import Tpll.Parser (parseString)
-import Tpll.Context (Context, ctx)
+import Tpll.Tokenizer
+import Tpll.Parser
+import Tpll.File
