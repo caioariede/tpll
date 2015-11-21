@@ -1,13 +1,14 @@
 module Tpll.Tags.Default
 (
     firstOfTag,
-    nowTag
+    nowTag,
+    getAllDefaultTags
 ) where
 
 
 import Tpll.Context (Context, ctx)
 import Tpll.Tokenizer (Token(Tag, content, line))
-import Tpll.Tags (TagResult)
+import Tpll.Tags (TagResult, Tags, tags)
 
 
 import Prelude hiding (lookup)
@@ -67,3 +68,8 @@ nowTag ctx' token tokens =
     let result = fmap (formatTime defaultTimeLocale "%Y-%m-%d %H:%I:%S") getCurrentTime
     in
         ([], result)
+
+
+getAllDefaultTags :: Tags
+getAllDefaultTags =
+    tags [("firstof", firstOfTag), ("now", nowTag)]

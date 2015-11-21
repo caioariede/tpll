@@ -5,7 +5,8 @@ where
 
 
 import Tpll.Context (ctx, Context)
-import Tpll.Tags (tags, Tags)
+import Tpll.Tags (Tags)
+import Tpll.Tags.Default (getAllDefaultTags)
 import Tpll.Parser (parseString)
 import Tpll.Tags.Default (firstOfTag)
 
@@ -15,7 +16,7 @@ import Tpll.Tags.Default (firstOfTag)
 -- Examples:
 --
 -- >>> let ctx' = ctx [("a", ""), ("b", "42"), ("c", "")]
--- >>> let tags' = tags [("firstof", firstOfTag)]
+-- >>> let tags' = getAllDefaultTags
 -- >>> renderFile "misc/index.html" ctx' tags'
 -- "42\n"
 renderFile :: String -> Context -> Tags -> IO String
