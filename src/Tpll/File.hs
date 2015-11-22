@@ -4,7 +4,7 @@ module Tpll.File
 where
 
 
-import Tpll.Context (ctx, Context)
+import Tpll.Context (ctx, Context, ContextValue(CStr))
 import Tpll.Tags (Tags)
 import Tpll.Tags.Default (getAllDefaultTags)
 import Tpll.Parser (parseString)
@@ -15,7 +15,7 @@ import Tpll.Tags.Default (firstOfTag)
 --
 -- Examples:
 --
--- >>> let ctx' = ctx [("a", ""), ("b", "42"), ("c", "")]
+-- >>> let ctx' = ctx [("a", CStr ""), ("b", CStr "42"), ("c", CStr "")]
 -- >>> let tags' = getAllDefaultTags
 -- >>> renderFile "misc/index.html" ctx' tags'
 -- "42\n"

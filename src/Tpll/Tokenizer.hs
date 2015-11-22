@@ -13,7 +13,8 @@ data Token =
     Text        { content :: String, line :: Int }  |
     Comment     { content :: String, line :: Int }  |
     Variable    { content :: String, line :: Int }
-    deriving (Show)
+
+    deriving (Show, Eq)
 
 
 regexTag = "({%.*?%}|{{.*?}}|{#.*?#})" :: String

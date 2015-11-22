@@ -2,7 +2,7 @@ module Tpll.Tags
 (
     Tag,
     Tags,
-    TagResult,
+    TagAction(Render, RenderBlock),
     tags
 ) where
 
@@ -13,8 +13,11 @@ import Tpll.Context (Context)
 import Data.Map.Strict (Map, fromList)
 
 
-type TagResult = ([Token], IO String)
-type Tag = Context -> Token -> [Token] -> TagResult
+data TagAction =
+    Render ([Token], IO String)                         |
+    RenderBlock ([Context], Context, [Token], Token)
+
+type Tag = Context -> Token -> [Token] -> TagAction
 type Tags = Map String Tag
 
 
