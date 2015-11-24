@@ -8,7 +8,6 @@ import Tpll.Context (ctx, Context, ContextValue(CStr))
 import Tpll.Tags (Tags)
 import Tpll.Tags.Default (getAllDefaultTags)
 import Tpll.Parser (parseString)
-import Tpll.Tags.Default (firstOfTag)
 
 
 -- | Render a file

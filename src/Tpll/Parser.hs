@@ -15,7 +15,7 @@ import Prelude hiding (lookup)
 import Control.Monad (liftM2)
 import Data.Map.Strict (lookup)
 import Data.List.Split (splitOn)
-import Data.Maybe (catMaybes)
+import Data.Maybe (mapMaybe)
 
 
 -- | Consume tag token
@@ -105,7 +105,7 @@ parseTokensUntil' ctx' tags' (token:tokens) untilToken acc =
             -- just ignore the currentToken
             acc
         else
-            let (newtokens, result) = parseToken ctx' tags' ([token] ++ tokens)
+            let (newtokens, result) = parseToken ctx' tags' (token:tokens)
             in
                 parseTokensUntil' ctx' tags' newtokens untilToken (result:acc)
 
@@ -149,7 +149,7 @@ parseTokenVariable :: Context -> Tags -> Token -> String
 parseTokenVariable ctx' (_, filters') (Variable { content = content, line = _ }) =
     let (key:filters) = splitOn "|" content
         val = lookup key ctx'
-        pipeline = catMaybes $ map (\(fn) -> lookup fn filters') filters
+	pipeline = mapMaybe (`lookup` filters') filters
         result = runFilters ctx' val pipeline
     in
         case result of

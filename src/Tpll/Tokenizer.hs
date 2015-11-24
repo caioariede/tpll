@@ -56,7 +56,7 @@ tagText :: String -> String
 tagText text =
     let trim = (unwords . words)
     in
-        trim $ drop 2 $ take ((length text) - 2) $ text
+        trim $ drop 2 $ take (length text - 2) text
 
 
 -- | Find next parsing position
@@ -83,7 +83,7 @@ nextPos text =
         if offset < 0 then
             Nothing
         else
-            Just (offset, (offset + len))
+            Just (offset, offset + len)
 
 
 -- | Tokenize template string
@@ -113,19 +113,19 @@ tokenize' str line tokens =
             if str == "" then
                 reverse tokens
             else
-                let newline = line + (countLineBreaks str)
+                let newline = line + countLineBreaks str
                 in
-                    reverse ((getTextToken str newline):tokens)
+                    reverse getTextToken str newline : tokens
 
         Just (first, last) ->
             if first > 0 then
                 let (head, rest) = splitAt first str
-                    newline = line + (countLineBreaks head)
+                    newline = line + countLineBreaks head
                 in
-                    tokenize' rest newline ((getTextToken head line):tokens)
+                    tokenize' rest newline (getTextToken head line:tokens)
             else
                 let (head, rest) = splitAt last str
-                    newline = line + (countLineBreaks head)
+                    newline = line + countLineBreaks head
                 in
                     case getToken head line of
                         Nothing ->

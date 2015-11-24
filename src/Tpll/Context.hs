@@ -34,5 +34,4 @@ type Context = Map String ContextValue
 -- >>> r
 -- 2
 ctx :: [(String, ContextValue)] -> Context
-ctx list =
-    fromList list
+ctx = fromList

@@ -108,7 +108,7 @@ forTag ctx' token tokens =
                         Nothing ->
                             []
                 in
-                    RenderBlock (ctxstack, ctx', tokens, (Tag { content = "endfor", line = 0 }))
+                    RenderBlock (ctxstack, ctx', tokens, Tag { content = "endfor", line = 0 })
 
 
 -- | Create a context stack for the "for" loop
