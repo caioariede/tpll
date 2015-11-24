@@ -6,19 +6,37 @@ HTML Template Engine for Haskell inspired in Django Template Engine
 ### Usage
 
 ```haskell
-import Tpll.Context (ctx)
+import Tpll.Context (ctx, ContextValue(CStr, CInt, CList))
 import Tpll.Tags.Default (getAllDefaultTags)
 import Tpll.File (renderFile)
 
 
-let ctx' = ctx [("a", ""), ("b", "42"), ("c", "")]
+let ctx' = ctx [
+  ("a", CStr "),
+  ("b", CInt 42),
+  ("list", CList [CStr "foo", CStr "bar"])
+]
+
 renderFile "index.html" ctx' getAllDefaultTags
 ```
 
 **index.html**
 
 ```html
-{% firstof a b c %}
+<b>{% firstof a b c %}</b>
+<ul>
+{% for x in list %}
+  <li>{{ x|upper }}
+{% endfor %}
+</ul>
 ```
 
-Result: `42\n`
+**Output:**
+
+```html
+<b>42</b>
+<ul>
+  <li>FOO
+  <li>BAR
+</ul>
+```
