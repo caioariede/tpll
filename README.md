@@ -12,7 +12,7 @@ import Tpll.File (renderFile)
 
 
 let ctx' = ctx [
-  ("a", CStr "),
+  ("a", CStr ""),
   ("b", CInt 42),
   ("list", CList [CStr "foo", CStr "bar"])
 ]
