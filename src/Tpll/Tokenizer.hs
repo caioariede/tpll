@@ -115,7 +115,7 @@ tokenize' str line tokens =
             else
                 let newline = line + countLineBreaks str
                 in
-                    reverse getTextToken str newline : tokens
+                    reverse (getTextToken str newline : tokens)
 
         Just (first, last) ->
             if first > 0 then
