@@ -1,7 +1,7 @@
 module Tpll.Tags.Default
 (
-    firstOfTag,
-    nowTag,
+    firstOfTag, nowTag,
+    upperFilter, lowerFilter,
     getAllDefaultTags
 ) where
 
@@ -17,6 +17,7 @@ import Data.Time.Clock (getCurrentTime)
 import Data.Time.Format (formatTime, defaultTimeLocale)
 import Data.Map.Strict (lookup, insert)
 import Data.List (elemIndex)
+import Data.Char (toUpper, toLower)
 
 
 -- | template tag: firstof
@@ -110,7 +111,7 @@ forTag ctx' token tokens =
                     RenderBlock (ctxstack, ctx', tokens, (Tag { content = "endfor", line = 0 }))
 
 
--- Create a context stack for the "for" loop
+-- | Create a context stack for the "for" loop
 --
 -- Examples:
 --
@@ -126,7 +127,44 @@ forTagStack ctx' key val =
             map (\(a) -> insert key a ctx') lst
         _ ->
             []
-    
+
+
+-- | Upper template filter
+--
+-- Examples:
+--
+-- >>> let ctx' = ctx []
+-- >>> let Just (CStr r) = upperFilter ctx' (Just (CStr "bar"))
+-- >>> r
+-- "BAR"
+upperFilter :: Context -> Maybe ContextValue -> Maybe ContextValue
+upperFilter ctx' val =
+    case val of
+        Just (CStr a) ->
+            Just (CStr (map toUpper a))
+        Just b ->
+            Just b
+        Nothing ->
+            Nothing
+
+
+-- | Lower template filter
+--
+-- Examples:
+--
+-- >>> let ctx' = ctx []
+-- >>> let Just (CStr r) = lowerFilter ctx' (Just (CStr "FOO"))
+-- >>> r
+-- "foo"
+lowerFilter :: Context -> Maybe ContextValue -> Maybe ContextValue
+lowerFilter ctx' val =
+    case val of
+        Just (CStr a) ->
+            Just (CStr (map toLower a))
+        Just b ->
+            Just b
+        Nothing ->
+            Nothing
 
 
 getAllDefaultTags :: Tags
@@ -135,4 +173,7 @@ getAllDefaultTags =
         ("firstof", firstOfTag),
         ("now", nowTag),
         ("for", forTag)
+    ] [
+        ("upper", upperFilter),
+        ("lower", lowerFilter)
     ]

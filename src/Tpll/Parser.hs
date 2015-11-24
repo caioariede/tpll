@@ -7,13 +7,15 @@ module Tpll.Parser
 
 import Tpll.Tokenizer (Token(Tag, Variable, Text, content, line), tokenize)
 import Tpll.Context (Context, ctx, ContextValue(CStr, CInt, CList))
-import Tpll.Tags (Tag, Tags, TagAction(Render, RenderBlock), tags)
-import Tpll.Tags.Default (getAllDefaultTags)
+import Tpll.Tags (Tag, Tags, TagAction(Render, RenderBlock), tags, Filter)
+import Tpll.Tags.Default (getAllDefaultTags, upperFilter, lowerFilter)
 
 
 import Prelude hiding (lookup)
 import Control.Monad (liftM2)
 import Data.Map.Strict (lookup)
+import Data.List.Split (splitOn)
+import Data.Maybe (catMaybes)
 
 
 -- | Consume tag token
@@ -21,12 +23,12 @@ import Data.Map.Strict (lookup)
 -- Examples:
 --
 -- >>> let ctx' = ctx []
--- >>> let tags' = tags []
+-- >>> let tags' = tags [] []
 -- >>> let Render (_, r) = consumeTag ctx' tags' (Tag { content = "x", line = 1 }) []
 -- >>> r
 -- "<error>"
 consumeTag :: Context -> Tags -> Token -> [Token] -> TagAction
-consumeTag ctx' tags' token tokens =
+consumeTag ctx' (tags', _) token tokens =
     let Tag { content = content, line = _ } = token
         ([name], parts) = splitAt 1 $ words content
     in
@@ -42,7 +44,7 @@ consumeTag ctx' tags' token tokens =
 -- Examples:
 --
 -- >>> let ctx' = ctx [("foo", CStr "bar"), ("bar", CStr "2")]
--- >>> let tags' = tags []
+-- >>> let tags' = tags [] []
 -- >>> let Just (CStr r) = lookup "foo" ctx'
 -- >>> r
 -- "bar"
@@ -78,7 +80,7 @@ renderBlock (ctx':ctxstack) tags' tokens untilToken acc =
 -- Examples:
 --
 -- >>> let ctx' = ctx [("foo", CStr "bar"), ("bar", CStr "2")]
--- >>> let tags' = tags []
+-- >>> let tags' = tags [] []
 -- >>> let tokens = [Variable { content = "foo", line = 1 }, Variable { content = "x", line = 1 }, Variable { content = "bar", line = 2 }]
 -- >>> let r = parseTokensUntil ctx' tags' tokens (Variable { content = "x", line = 0 })
 -- >>> length r
@@ -113,40 +115,94 @@ parseTokensUntil' ctx' tags' (token:tokens) untilToken acc =
 -- Examples:
 --
 -- >>> let ctx' = ctx [("foo", CStr "foo")]
--- >>> let tags' = tags []
+-- >>> let tags' = tags [] []
 -- >>> let (_, r) = parseToken ctx' tags' [Variable { content = "foo", line = 1 }]
 -- >>> r
 -- "foo"
 parseToken :: Context -> Tags -> [Token] -> ([Token], IO String)
 parseToken ctx' tags' (token:tokens) =
     case token of
-        Variable { content = content, line = _ } ->
-            case lookup content ctx' of
-                Just (CStr a) ->
-                    (tokens, return a)
-                Just (CInt a) ->
-                    (tokens, return $ show a)
-                _ ->
-                    (tokens, return "")
+        Variable { content = _, line = _ } ->
+            (tokens, return $ parseTokenVariable ctx' tags' token)
         Text { content = content, line = _ } ->
             (tokens, return content)
         Tag { content = _, line = _ } ->
-            let result = consumeTag ctx' tags' token tokens
-            in
-                case result of
-                    RenderBlock (ctxstack, oldctx, newtokens, untilToken) ->
-                        renderBlock ctxstack tags' newtokens untilToken []
-                    Render (newtokens, render) ->
-                        (newtokens, render)
+            parseTokenTag ctx' tags' token tokens
         _ ->
             (tokens, return "")
+
+
+-- | Parse variable token
+--
+-- Examples:
+--
+-- >>> let ctx' = ctx [("foo", CStr "foo")]
+-- >>> let tags' = tags [] []
+-- >>> parseTokenVariable ctx' tags' (Variable { content = "foo", line = 0 })
+-- "foo"
+--
+-- >>> let ctx' = ctx [("foo", CStr "foo")]
+-- >>> let tags' = getAllDefaultTags
+-- >>> parseTokenVariable ctx' tags' (Variable { content = "foo|upper", line = 0 })
+-- "FOO"
+parseTokenVariable :: Context -> Tags -> Token -> String
+parseTokenVariable ctx' (_, filters') (Variable { content = content, line = _ }) =
+    let (key:filters) = splitOn "|" content
+        val = lookup key ctx'
+        pipeline = catMaybes $ map (\(fn) -> lookup fn filters') filters
+        result = runFilters ctx' val pipeline
+    in
+        case result of
+            Just (CStr a) ->
+                a
+            Just (CInt a) ->
+                show a
+            _ ->
+                ""
+
+
+-- | Run filter pipeline over value
+--
+-- Examples:
+--
+-- >>> let ctx' = ctx []
+-- >>> let filters = [upperFilter]
+-- >>> let Just (CStr r) = runFilters ctx' (Just (CStr "foo")) filters
+-- >>> r
+-- "FOO"
+--
+-- >>> let ctx' = ctx []
+-- >>> let filters = []
+-- >>> let Just (CStr r) = runFilters ctx' (Just (CStr "foo")) filters
+-- >>> r
+-- "foo"
+--
+-- >>> let ctx' = ctx []
+-- >>> let filters = [upperFilter, lowerFilter]
+-- >>> let Just (CStr r) = runFilters ctx' (Just (CStr "fooBar")) filters
+-- >>> r
+-- "foobar"
+runFilters :: Context -> Maybe ContextValue -> [Filter] -> Maybe ContextValue
+runFilters ctx' val [] = val
+runFilters ctx' val (fn:filters) =
+    runFilters ctx' (fn ctx' val) filters
+
+
+parseTokenTag :: Context -> Tags -> Token -> [Token] -> ([Token], IO String)
+parseTokenTag ctx' tags' token tokens =
+    let result = consumeTag ctx' tags' token tokens
+    in
+        case result of
+            RenderBlock (ctxstack, oldctx, newtokens, untilToken) ->
+                renderBlock ctxstack tags' newtokens untilToken []
+            Render (newtokens, render) ->
+                (newtokens, render)
 
 
 -- | Parse string
 --
 -- Examples:
 --
--- 
 -- >>> let ctx' = ctx [("bang", CStr ""), ("bar", CInt 2)]
 -- >>> parseString ctx' getAllDefaultTags "foo{% firstof bang %}bar"
 -- "foobar"
@@ -157,6 +213,10 @@ parseToken ctx' tags' (token:tokens) =
 -- >>> let ctx' = ctx [("list", CList [CInt 1, CInt 2, CInt 3, CInt 5])]
 -- >>> parseString ctx' getAllDefaultTags "{% for x in list %}\n{{ x }}{% endfor %}"
 -- "\n1\n2\n3\n5"
+--
+-- >>> let ctx' = ctx [("list", CList [CStr "a", CStr "b"])]
+-- >>> parseString ctx' getAllDefaultTags "{% for x in list %}\n{{ x|upper }}{% endfor %}"
+-- "\nA\nB"
 parseString :: Context -> Tags -> String -> IO String
 parseString ctx' tags' text =
     foldl1 (liftM2 (++)) $ parseTokens ctx' tags' $ tokenize text

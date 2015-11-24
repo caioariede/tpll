@@ -1,6 +1,7 @@
 module Tpll.Tags
 (
     Tag,
+    Filter,
     Tags,
     TagAction(Render, RenderBlock),
     tags
@@ -8,7 +9,7 @@ module Tpll.Tags
 
 
 import Tpll.Tokenizer (Token)
-import Tpll.Context (Context)
+import Tpll.Context (Context, ContextValue)
 
 import Data.Map.Strict (Map, fromList)
 
@@ -18,9 +19,10 @@ data TagAction =
     RenderBlock ([Context], Context, [Token], Token)
 
 type Tag = Context -> Token -> [Token] -> TagAction
-type Tags = Map String Tag
+type Filter = Context -> Maybe ContextValue -> Maybe ContextValue
+type Tags = (Map String Tag, Map String Filter)
 
 
-tags :: [(String, Tag)] -> Tags
-tags list =
-    fromList list
+tags :: [(String, Tag)] -> [(String, Filter)] -> Tags
+tags tags' filters' =
+    (fromList tags', fromList filters')
