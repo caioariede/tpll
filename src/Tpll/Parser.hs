@@ -6,7 +6,7 @@ module Tpll.Parser
 
 
 import Tpll.Tokenizer (Token(Tag, Variable, Text, content, line), tokenize)
-import Tpll.Context (Context, ctx, ContextValue(CStr, CInt, CList))
+import Tpll.Context (Context, ctx, ContextValue(CStr, CInt, CList), resolveCtx, ctxToString)
 import Tpll.Tags (Tag, Tags, TagAction(Render, RenderBlock), tags, Filter)
 import Tpll.Tags.Default (getAllDefaultTags, upperFilter, lowerFilter)
 
@@ -145,20 +145,19 @@ parseToken ctx' tags' (token:tokens) =
 -- >>> let tags' = getAllDefaultTags
 -- >>> parseTokenVariable ctx' tags' (Variable { content = "foo|upper", line = 0 })
 -- "FOO"
+--
+-- >>> let ctx' = ctx [("foo", CStr "foo")]
+-- >>> let tags' = getAllDefaultTags
+-- >>> parseTokenVariable ctx' tags' (Variable { content = "\"x Y z\"|upper|lower", line = 0 })
+-- "x y z"
 parseTokenVariable :: Context -> Tags -> Token -> String
 parseTokenVariable ctx' (_, filters') (Variable { content = content, line = _ }) =
     let (key:filters) = splitOn "|" content
-        val = lookup key ctx'
-	pipeline = mapMaybe (`lookup` filters') filters
+        val = resolveCtx ctx' key
+        pipeline = mapMaybe (`lookup` filters') filters
         result = runFilters ctx' val pipeline
     in
-        case result of
-            Just (CStr a) ->
-                a
-            Just (CInt a) ->
-                show a
-            _ ->
-                ""
+        ctxToString result
 
 
 -- | Run filter pipeline over value
@@ -202,6 +201,18 @@ parseTokenTag ctx' tags' token tokens =
 -- | Parse string
 --
 -- Examples:
+--
+-- >>> let ctx' = ctx []
+-- >>> parseString ctx' getAllDefaultTags "foo{% firstof x \"bar\" %}bar"
+-- "foobarbar"
+--
+-- >>> let ctx' = ctx []
+-- >>> parseString ctx' getAllDefaultTags "foo{% firstof 1 2 %}bar"
+-- "foo1bar"
+--
+-- >>> let ctx' = ctx []
+-- >>> parseString ctx' getAllDefaultTags "foo{% firstof 2.0 %}bar"
+-- "foo2.0bar"
 --
 -- >>> let ctx' = ctx [("bang", CStr ""), ("bar", CInt 2)]
 -- >>> parseString ctx' getAllDefaultTags "foo{% firstof bang %}bar"

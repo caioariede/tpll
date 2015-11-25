@@ -6,7 +6,7 @@ module Tpll.Tags.Default
 ) where
 
 
-import Tpll.Context (Context, ctx, ContextValue(CStr, CInt, CList, CAssoc))
+import Tpll.Context (Context, ctx, ContextValue(CStr, CInt, CDouble, CList, CAssoc), resolveCtx, ctxToString)
 import Tpll.Tokenizer (Token(Tag, Variable, content, line))
 import Tpll.Tags (TagAction(Render, RenderBlock), Tags, tags)
 
@@ -18,6 +18,17 @@ import Data.Time.Format (formatTime, defaultTimeLocale)
 import Data.Map.Strict (lookup, insert)
 import Data.List (elemIndex)
 import Data.Char (toUpper, toLower)
+
+
+-- | Resolve parts of a template tag
+--
+-- Examples:
+--
+-- >>> let ctx' = ctx [("a", CInt 1)]
+-- >>> let [Just (CInt 1), Nothing] = resolveParts ctx' ["a", "b"]
+resolveParts :: Context -> [String] -> [Maybe ContextValue]
+resolveParts ctx' =
+    map (resolveCtx ctx')
 
 
 -- | template tag: firstof
@@ -37,21 +48,22 @@ firstOfTag ctx' token tokens =
     let Tag { content = content, line = _ } = token
         (_, parts) = splitAt 1 $ words content
     in
-        Render (tokens, return $ firstOfTag' ctx' parts)
+        Render (tokens, return $ firstOfTag' ctx' $ resolveParts ctx' parts)
 
-firstOfTag' :: Context -> [String] -> String
+
+firstOfTag' :: Context -> [Maybe ContextValue] -> String
 firstOfTag' _ [] = ""
 firstOfTag' ctx' (x:xs) =
-    case lookup x ctx' of
+    case x of
         Just (CStr x) ->
             if x == "" then
                 firstOfTag' ctx' xs
             else
                 x
-        Just (CInt x) ->
-            show x
         Nothing ->
             firstOfTag' ctx' xs
+        _ ->
+            ctxToString x
 
 
 -- | template tag: now
@@ -137,6 +149,11 @@ forTagStack ctx' key val =
 -- >>> let Just (CStr r) = upperFilter ctx' (Just (CStr "bar"))
 -- >>> r
 -- "BAR"
+--
+-- >>> let ctx' = ctx []
+-- >>> let Just (CDouble r) = upperFilter ctx' (Just (CDouble 3.14))
+-- >>> r
+-- 3.14
 upperFilter :: Context -> Maybe ContextValue -> Maybe ContextValue
 upperFilter ctx' val =
     case val of
@@ -156,6 +173,11 @@ upperFilter ctx' val =
 -- >>> let Just (CStr r) = lowerFilter ctx' (Just (CStr "FOO"))
 -- >>> r
 -- "foo"
+--
+-- >>> let ctx' = ctx []
+-- >>> let Just (CInt r) = lowerFilter ctx' (Just (CInt 1))
+-- >>> r
+-- 1
 lowerFilter :: Context -> Maybe ContextValue -> Maybe ContextValue
 lowerFilter ctx' val =
     case val of
