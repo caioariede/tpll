@@ -1,3 +1,7 @@
+{-|
+Module      : Tpll.Tags.Default
+-}
+
 module Tpll.Tags.Default
 (
     firstOfTag, nowTag,
@@ -189,6 +193,7 @@ lowerFilter ctx' val =
             Nothing
 
 
+-- | Returns all default template tags and filters.
 getAllDefaultTags :: Tags
 getAllDefaultTags =
     tags [

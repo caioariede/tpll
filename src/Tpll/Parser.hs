@@ -1,3 +1,7 @@
+{-|
+Module      : Tpll.Parser
+-}
+
 module Tpll.Parser
 (
     parseString,

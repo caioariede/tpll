@@ -1,3 +1,7 @@
+{-|
+Module      : Tpll.Context
+-}
+
 module Tpll.Context
 (
     Context,
@@ -15,6 +19,17 @@ import Data.List (isInfixOf)
 import Text.Read (readMaybe)
 
 
+-- | All possible values that can be passed to the context.
+--
+-- It's also possible to group values by using `CAssoc` and `CList`:
+--
+-- @
+-- CAssoc (CInt 1, CStr "foo")
+-- @
+--
+-- @
+-- CList [CInt 1, CStr "foo", CAssoc (CInt 2, CStr "bar")]
+-- @
 data ContextValue = CStr        String                          |
                     CInt        Int                             |
                     CInteger    Integer                         |
@@ -24,10 +39,18 @@ data ContextValue = CStr        String                          |
 
                     deriving (Eq)
 
+
+-- | A HashMap that holds the context that is passed to the parser
+--
+-- You can generate a context by using the `ctx` function:
+--
+-- @
+-- let ctx' = ctx [("foo", CInt 1), ("bar", CStr "2")]
+-- @
 type Context = Map String ContextValue
 
 
--- | Build context
+-- | Helper function to create a Context HashMap from a list.
 --
 -- Examples:
 --
@@ -44,7 +67,7 @@ ctx :: [(String, ContextValue)] -> Context
 ctx = fromList
 
 
--- | Resolve context value
+-- | Function used by template tags to resolve values passed as arguments.
 --
 -- Examples:
 --
@@ -109,7 +132,7 @@ resolveCtxNumber ctx' str =
                 Nothing
 
 
--- | ContextValue to String
+-- | Function used to convert a ContextValue into a String.
 --
 -- Examples:
 --
