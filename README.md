@@ -3,6 +3,10 @@ HTML Template Engine for Haskell inspired in Django Template Engine
 
 **Warning:** This project is only for learning purposes. Not intended to be a long-term project, neither maintained. But well, feel free to use or fork it for your needs. :)
 
+### Documentation
+
+The documentation is available online at http://caioariede.github.io/tpll/
+
 ### Usage
 
 ```haskell
