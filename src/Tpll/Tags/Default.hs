@@ -4,7 +4,7 @@ Module      : Tpll.Tags.Default
 
 module Tpll.Tags.Default
 (
-    firstOfTag, nowTag,
+    commentTag, firstOfTag, nowTag,
     upperFilter, lowerFilter,
     getAllDefaultTags
 ) where
@@ -13,6 +13,7 @@ module Tpll.Tags.Default
 import Tpll.Context (Context, ctx, ContextValue(CStr, CInt, CDouble, CList, CAssoc), resolveCtx, ctxToString)
 import Tpll.Tokenizer (Token(Tag, Variable, content, line))
 import Tpll.Tags (TagAction(Render, RenderBlock), Tags, tags)
+import Tpll.Tags.Utils (resolveParts)
 
 
 import Prelude hiding (lookup)
@@ -24,28 +25,57 @@ import Data.List (elemIndex)
 import Data.Char (toUpper, toLower)
 
 
--- | Resolve parts of a template tag
+-- | @{% comment %} ... {% endcomment %}@
 --
--- Examples:
+-- Ignores everything between @{% comment %}@ and @{% endcomment %}@
 --
--- >>> let ctx' = ctx [("a", CInt 1)]
--- >>> let [Just (CInt 1), Nothing] = resolveParts ctx' ["a", "b"]
-resolveParts :: Context -> [String] -> [Maybe ContextValue]
-resolveParts ctx' =
-    map (resolveCtx ctx')
+-- __Examples:__
+--
+-- >>> import Tpll.Parser (parseString)
+-- >>> import Tpll.Context (ctx)
+-- >>> import Tpll.Tags.Default (getAllDefaultTags)
+-- >>>
+-- >>> let ctx' = ctx []
+-- >>> let tags' = getAllDefaultTags
+--
+-- >>> parseString ctx' tags' "abra{% comment %} X Y {% endcomment %}cadabra"
+-- "abracadabra"
+commentTag :: Context -> Token -> [Token] -> TagAction
+commentTag ctx' _ tokens =
+    Render (commentTag' ctx' tokens, return "")
+
+commentTag' :: Context -> [Token] -> [Token]
+commentTag' _ [] = []
+commentTag' ctx' (token:tokens) =
+    case token of
+        Tag { content = c, line = _ } ->
+            let name = head $ words c
+            in
+                if name == "endcomment" then
+                    tokens
+                else
+                    commentTag' ctx' tokens
+        _ ->
+            commentTag' ctx' tokens
 
 
--- | template tag: firstof
+-- | @{% firstof arg1 arg2 arg3 ... %}@
 --
--- Examples:
+-- Returns the first argument that is not empty.
 --
+-- __Examples:__
+--
+-- >>> import Tpll.Parser (parseString)
+-- >>> import Tpll.Context (ctx)
+-- >>> import Tpll.Tags.Default (getAllDefaultTags)
+-- >>>
 -- >>> let ctx' = ctx [("a", CStr ""), ("b", CStr "x")]
--- >>> let Render (_, r) = firstOfTag ctx' (Tag { content = "firstof a b", line = 1 }) []
--- >>> r
+-- >>> let tags' = getAllDefaultTags
+--
+-- >>> parseString ctx' tags' "{% firstof a b %}"
 -- "x"
 --
--- >>> let Render (_, r) = firstOfTag ctx' (Tag { content = "firstof a c", line = 1 }) []
--- >>> r
+-- >>> parseString ctx' tags' "{% firstof a c %}"
 -- ""
 firstOfTag :: Context -> Token -> [Token] -> TagAction
 firstOfTag ctx' token tokens =
@@ -70,44 +100,82 @@ firstOfTag' ctx' (x:xs) =
             ctxToString x
 
 
--- | template tag: now
+-- | @{% now [optional format] %}@
 --
--- Examples:
+-- Returns the current date and time. Accepts one argument with the desired
+-- format. The format must use the same syntax and codes defined by the
+-- `Data.Time.Format.formatTime` function.
 --
--- >>> let ctx' = ctx []
+-- __Examples:__
+--
+-- >>> import Tpll.Parser (parseString)
+-- >>> import Tpll.Context (ctx)
+-- >>> import Tpll.Tags.Default (getAllDefaultTags)
+-- >>>
+-- >>> let ctx' = ctx [("a", CStr ""), ("b", CStr "x")]
+-- >>> let tags' = getAllDefaultTags
+--
+-- >>> import Data.Time.Clock (getCurrentTime)
+-- >>> import Data.Time.Format (formatTime, defaultTimeLocale)
+--
+-- >>> -- Expected format: 2015-11-26 23:11:25
 -- >>> let expected = fmap (formatTime defaultTimeLocale "%Y-%m-%d %H:%I:%S") getCurrentTime
--- >>> let Render (_, r) = nowTag ctx' (Tag { content = "now", line = 1 }) []
+--
+-- >>> let result = parseString ctx' tags' "{% now %}"  -- output: 2015-11-26 23:11:25
 -- >>> :{
 --  do
 --      a <- expected
---      b <- r
---      print $ show $ a == b
+--      b <- result
+--      print $ id $ a == b
 -- :}
--- "True"
-nowTag :: Context -> Token -> [Token] -> TagAction
-nowTag ctx' token tokens =
-    let result = fmap (formatTime defaultTimeLocale "%Y-%m-%d %H:%I:%S") getCurrentTime
-    in
-        Render ([], result)
-
-
--- | template tag: for
---
--- Examples:
---
--- >>> let ctx' = ctx [("list", CList [CInt 1, CInt 2, CInt 3, CInt 5])]
--- >>> let RenderBlock (ctxstack, oldctx, tokens, untilToken) = forTag ctx' (Tag { content = "for item in list", line = 1 }) [Variable { content = "item", line = 1 }, Tag { content = "endfor", line = 1 }]
--- >>> ctx' == oldctx
 -- True
 --
--- >>> tokens
--- [Variable {content = "item", line = 1},Tag {content = "endfor", line = 1}]
+-- >>> -- Expected format: 2015-11-26
+-- >>> let expected = fmap (formatTime defaultTimeLocale "%Y-%m-%d") getCurrentTime
 --
--- >>> untilToken
--- Tag {content = "endfor", line = 0}
+-- >>> let result = parseString ctx' tags' "{% now \"%Y-%m-%d\" %}"  -- output: 2015-11-26
+-- >>> :{
+--  do
+--      a <- expected
+--      b <- result
+--      print $ id $ a == b
+-- :}
+-- True
+nowTag :: Context -> Token -> [Token] -> TagAction
+nowTag ctx' token tokens =
+    let Tag { content = content, line = _ } = token
+        parts = tail $ words content
+
+        format' = case parts of
+            [] -> Nothing
+            (x:_) -> resolveCtx ctx' x
+
+        format = case format' of
+            Just (CStr x) -> x
+            _ -> "%Y-%m-%d %H:%I:%S"
+
+    in
+        let result = fmap (formatTime defaultTimeLocale format) getCurrentTime
+        in
+            Render ([], result)
+
+
+-- | @{% for x in list %} ... {% endfor %}@
 --
--- >>> length ctxstack
--- 4
+-- Iterates over all items in the list.
+--
+-- __Examples:__
+--
+-- >>> import Tpll.Parser (parseString)
+-- >>> import Tpll.Context (ctx)
+-- >>> import Tpll.Tags.Default (getAllDefaultTags)
+-- >>>
+-- >>> let ctx' = ctx [("list", CList [CInt 1, CInt 2, CInt 3, CInt 5])]
+-- >>> let tags' = getAllDefaultTags
+--
+-- >>> parseString ctx' tags' "{% for x in list %}{{ x }},{% endfor %}"
+-- "1,2,3,5,"
+--
 forTag :: Context -> Token -> [Token] -> TagAction
 forTag ctx' token tokens =
     let Tag { content = content, line = _ } = token
@@ -145,19 +213,24 @@ forTagStack ctx' key val =
             []
 
 
--- | Upper template filter
+-- | @{{ arg|upper }}@
 --
--- Examples:
+-- Transforms text to uppercase.
 --
--- >>> let ctx' = ctx []
--- >>> let Just (CStr r) = upperFilter ctx' (Just (CStr "bar"))
--- >>> r
--- "BAR"
+-- __Examples:__
 --
--- >>> let ctx' = ctx []
--- >>> let Just (CDouble r) = upperFilter ctx' (Just (CDouble 3.14))
--- >>> r
--- 3.14
+-- >>> import Tpll.Parser (parseString)
+-- >>> import Tpll.Context (ctx)
+-- >>> import Tpll.Tags.Default (getAllDefaultTags)
+-- >>>
+-- >>> let ctx' = ctx [("x", CStr "foo"), ("y", CDouble 3.14)]
+-- >>> let tags' = getAllDefaultTags
+--
+-- >>> parseString ctx' tags' "{{ x|upper }}"
+-- "FOO"
+--
+-- >>> parseString ctx' tags' "{{ y|upper }}"
+-- "3.14"
 upperFilter :: Context -> Maybe ContextValue -> Maybe ContextValue
 upperFilter ctx' val =
     case val of
@@ -169,19 +242,24 @@ upperFilter ctx' val =
             Nothing
 
 
--- | Lower template filter
+-- | @{{ arg|lower }}@
 --
--- Examples:
+-- Transforms text to lowercase.
 --
--- >>> let ctx' = ctx []
--- >>> let Just (CStr r) = lowerFilter ctx' (Just (CStr "FOO"))
--- >>> r
--- "foo"
+-- __Examples:__
 --
--- >>> let ctx' = ctx []
--- >>> let Just (CInt r) = lowerFilter ctx' (Just (CInt 1))
--- >>> r
--- 1
+-- >>> import Tpll.Parser (parseString)
+-- >>> import Tpll.Context (ctx)
+-- >>> import Tpll.Tags.Default (getAllDefaultTags)
+-- >>>
+-- >>> let ctx' = ctx [("x", CStr "Bar"), ("y", CDouble 3.14)]
+-- >>> let tags' = getAllDefaultTags
+--
+-- >>> parseString ctx' tags' "{{ x|lower }}"
+-- "bar"
+--
+-- >>> parseString ctx' tags' "{{ y|lower }}"
+-- "3.14"
 lowerFilter :: Context -> Maybe ContextValue -> Maybe ContextValue
 lowerFilter ctx' val =
     case val of
@@ -197,6 +275,7 @@ lowerFilter ctx' val =
 getAllDefaultTags :: Tags
 getAllDefaultTags =
     tags [
+        ("comment", commentTag),
         ("firstof", firstOfTag),
         ("now", nowTag),
         ("for", forTag)
