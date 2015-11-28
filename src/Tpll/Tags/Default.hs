@@ -11,7 +11,7 @@ module Tpll.Tags.Default
 
 
 import Tpll.Context (Context, ctx, ContextValue(CStr, CInt, CDouble, CList, CAssoc), resolveCtx, ctxToString)
-import Tpll.Tokenizer (Token(Tag, Variable, content, line))
+import Tpll.Tokenizer (Token(Tag, Variable, Text, Comment, content, line, raw))
 import Tpll.Tags (TagAction(Render, RenderBlock), Tags, tags)
 import Tpll.Tags.Utils (resolveParts)
 
@@ -22,6 +22,7 @@ import Data.Time.Clock (getCurrentTime)
 import Data.Time.Format (formatTime, defaultTimeLocale)
 import Data.Map.Strict (lookup, insert)
 import Data.List (elemIndex)
+import Data.List.Split (splitOn)
 import Data.Char (toUpper, toLower)
 
 
@@ -192,7 +193,7 @@ forTag ctx' token tokens =
                         Nothing ->
                             []
                 in
-                    RenderBlock (ctxstack, ctx', tokens, Tag { content = "endfor", line = 0 })
+                    RenderBlock (ctxstack, ctx', tokens, "endfor")
 
 
 -- | Create a context stack for the "for" loop
@@ -211,6 +212,85 @@ forTagStack ctx' key val =
             map (\(a) -> insert key a ctx') lst
         _ ->
             []
+
+
+-- | @{{% with arg1=value arg2=value %} ... {% endwith %}@
+--
+-- Assign values to variables.
+--
+-- __Examples:__
+--
+-- >>> import Tpll.Parser (parseString)
+-- >>> import Tpll.Context (ctx)
+-- >>> import Tpll.Tags.Default (getAllDefaultTags)
+-- >>>
+-- >>> let ctx' = ctx []
+-- >>> let tags' = getAllDefaultTags
+--
+-- >>> parseString ctx' tags' "{% with x=\"foo\" %}{{ x }}{% endwith %}"
+-- "foo"
+--
+-- >>> parseString ctx' tags' "{% with x=\"foo\" y=2 %}{{ y }}{% endwith %}"
+-- "2"
+withTag :: Context -> Token -> [Token] -> TagAction
+withTag ctx' token tokens =
+    let Tag { content = content, line = _ } = token
+        parts = tail $ words content
+        kvs = map (splitOn "=") $ parts
+        newCtx = withTagCtx ctx' kvs
+    in
+        RenderBlock ([newCtx], ctx', tokens, "endwith")
+
+withTagCtx :: Context -> [[String]] -> Context
+withTagCtx ctx' [] = ctx'
+withTagCtx ctx' ([key, value]:xs) =
+    let lookup = resolveCtx ctx' value
+    in
+        case lookup of
+            Nothing ->
+                withTagCtx ctx' xs
+            Just a ->
+                withTagCtx (insert key a ctx') xs
+
+
+-- | @{% verbatim %} ... {% endverbatim %}@
+--
+-- Avoids template rendering.
+--
+-- __Examples:__
+--
+-- >>> import Tpll.Parser (parseString)
+-- >>> import Tpll.Context (ctx)
+-- >>> import Tpll.Tags.Default (getAllDefaultTags)
+-- >>>
+-- >>> let ctx' = ctx []
+-- >>> let tags' = getAllDefaultTags
+--
+-- >>> parseString ctx' tags' "{% verbatim %}{{ x }}{%  y %}{# z  #} {% endverbatim %}"
+-- "{{ x }}{%  y %}{# z  #} "
+verbatimTag :: Context -> Token -> [Token] -> TagAction
+verbatimTag ctx' _ tokens =
+    verbatimTagRender tokens []
+
+verbatimTagRender :: [Token] -> String -> TagAction
+verbatimTagRender [] str =
+    Render ([], return str)
+verbatimTagRender (token:tokens) str =
+    case token of
+        Tag { content = c, raw = r } ->
+            let name = head $ words c
+            in
+                if name == "endverbatim" then
+                    Render (tokens, return str)
+                else
+                    verbatimTagRender tokens (str ++ r)
+        Text { content = c } ->
+            verbatimTagRender tokens (str ++ c)
+        Variable { raw = r } ->
+            verbatimTagRender tokens (str ++ r)
+        Comment { raw = r } ->
+            verbatimTagRender tokens (str ++ r)
+    
 
 
 -- | @{{ arg|upper }}@
@@ -278,7 +358,9 @@ getAllDefaultTags =
         ("comment", commentTag),
         ("firstof", firstOfTag),
         ("now", nowTag),
-        ("for", forTag)
+        ("for", forTag),
+        ("with", withTag),
+        ("verbatim", verbatimTag)
     ] [
         ("upper", upperFilter),
         ("lower", lowerFilter)

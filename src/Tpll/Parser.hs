@@ -9,7 +9,7 @@ module Tpll.Parser
 ) where
 
 
-import Tpll.Tokenizer (Token(Tag, Variable, Text, content, line), tokenize)
+import Tpll.Tokenizer (Token(Tag, Variable, Text, content, line, raw), tokenize)
 import Tpll.Context (Context, ctx, ContextValue(CStr, CInt, CList), resolveCtx, ctxToString)
 import Tpll.Tags (Tag, Tags, TagAction(Render, RenderBlock), tags, Filter)
 import Tpll.Tags.Default (getAllDefaultTags, upperFilter, lowerFilter)
@@ -28,7 +28,7 @@ import Data.Maybe (mapMaybe)
 --
 -- >>> let ctx' = ctx []
 -- >>> let tags' = tags [] []
--- >>> let Render (_, r) = consumeTag ctx' tags' (Tag { content = "x", line = 1 }) []
+-- >>> let Render (_, r) = consumeTag ctx' tags' (Tag { content = "x", line = 1, raw = "{% x %}" }) []
 -- >>> r
 -- "<error>"
 consumeTag :: Context -> Tags -> Token -> [Token] -> TagAction
@@ -52,10 +52,10 @@ consumeTag ctx' (tags', _) token tokens =
 -- >>> let Just (CStr r) = lookup "foo" ctx'
 -- >>> r
 -- "bar"
--- >>> let [r] = parseTokens ctx' tags' [Variable { content = "foo", line = 1 }]
+-- >>> let [r] = parseTokens ctx' tags' [Variable { content = "foo", line = 1, raw = "{{ foo }}" }]
 -- >>> r
 -- "bar"
--- >>> let [r] = parseTokens ctx' tags' [Variable { content = "unknown", line = 1 }]
+-- >>> let [r] = parseTokens ctx' tags' [Variable { content = "unknown", line = 1, raw = "{{ unknown }}" }]
 -- >>> r
 -- ""
 parseTokens :: Context -> Tags -> [Token] -> [IO String]
@@ -70,7 +70,7 @@ parseTokens' ctx' tags' tokens acc =
         parseTokens' ctx' tags' newtokens (result:acc)
 
 
-renderBlock :: [Context] -> Tags -> [Token] -> Token -> [IO String] -> ([Token], IO String)
+renderBlock :: [Context] -> Tags -> [Token] -> String -> [IO String] -> ([Token], IO String)
 renderBlock [] _ _ _ acc =
     ([], foldl1 (liftM2 (++)) $ reverse acc)
 renderBlock (ctx':ctxstack) tags' tokens untilToken acc =
@@ -79,36 +79,39 @@ renderBlock (ctx':ctxstack) tags' tokens untilToken acc =
         renderBlock ctxstack tags' tokens untilToken (result ++ acc)
 
 
--- | Parse tokens until
+-- | Parse tokens until tag token
 --
 -- Examples:
 --
 -- >>> let ctx' = ctx [("foo", CStr "bar"), ("bar", CStr "2")]
 -- >>> let tags' = tags [] []
--- >>> let tokens = [Variable { content = "foo", line = 1 }, Variable { content = "x", line = 1 }, Variable { content = "bar", line = 2 }]
--- >>> let r = parseTokensUntil ctx' tags' tokens (Variable { content = "x", line = 0 })
+-- >>> let tokens = [Variable { content = "foo", line = 1, raw = "{{ foo }}" }, Tag { content = "x", line = 1, raw = "{% x %}" }, Variable { content = "bar", line = 2, raw = "{{ bar }}" }]
+-- >>> let r = parseTokensUntil ctx' tags' tokens "x"
 -- >>> length r
 -- 1
 -- >>> head r
 -- "bar"
-parseTokensUntil :: Context -> Tags -> [Token] -> Token -> [IO String]
+parseTokensUntil :: Context -> Tags -> [Token] -> String -> [IO String]
 parseTokensUntil ctx' tags' tokens untilToken =
     parseTokensUntil' ctx' tags' tokens untilToken []
 
 
-parseTokensUntil' :: Context -> Tags -> [Token] -> Token -> [IO String] -> [IO String]
+parseTokensUntil' :: Context -> Tags -> [Token] -> String -> [IO String] -> [IO String]
 parseTokensUntil' _ _ [] untilToken acc =
     reverse acc
 
 parseTokensUntil' ctx' tags' (token:tokens) untilToken acc =
-    -- this is a bit hacky, but we need to ignore the line
-    let currentToken = token { line = 0 }
-        neededToken = untilToken { line = 0 }
-    in
-        if currentToken == neededToken then
-            -- just ignore the currentToken
-            acc
-        else
+    case token of
+        Tag { content = c } ->
+            let currentToken = head $ words c
+            in
+                if currentToken == untilToken then
+                    acc
+                else
+                    let (newtokens, result) = parseToken ctx' tags' (token:tokens)
+                    in
+                        parseTokensUntil' ctx' tags' newtokens untilToken (result:acc)
+        _ ->
             let (newtokens, result) = parseToken ctx' tags' (token:tokens)
             in
                 parseTokensUntil' ctx' tags' newtokens untilToken (result:acc)
@@ -120,7 +123,7 @@ parseTokensUntil' ctx' tags' (token:tokens) untilToken acc =
 --
 -- >>> let ctx' = ctx [("foo", CStr "foo")]
 -- >>> let tags' = tags [] []
--- >>> let (_, r) = parseToken ctx' tags' [Variable { content = "foo", line = 1 }]
+-- >>> let (_, r) = parseToken ctx' tags' [Variable { content = "foo", line = 1, raw = "{{ foo }}" }]
 -- >>> r
 -- "foo"
 parseToken :: Context -> Tags -> [Token] -> ([Token], IO String)
@@ -142,17 +145,17 @@ parseToken ctx' tags' (token:tokens) =
 --
 -- >>> let ctx' = ctx [("foo", CStr "foo")]
 -- >>> let tags' = tags [] []
--- >>> parseTokenVariable ctx' tags' (Variable { content = "foo", line = 0 })
+-- >>> parseTokenVariable ctx' tags' (Variable { content = "foo", line = 0, raw = "{{ foo }}" })
 -- "foo"
 --
 -- >>> let ctx' = ctx [("foo", CStr "foo")]
 -- >>> let tags' = getAllDefaultTags
--- >>> parseTokenVariable ctx' tags' (Variable { content = "foo|upper", line = 0 })
+-- >>> parseTokenVariable ctx' tags' (Variable { content = "foo|upper", line = 0, raw = "{{ foo|upper }}" })
 -- "FOO"
 --
 -- >>> let ctx' = ctx [("foo", CStr "foo")]
 -- >>> let tags' = getAllDefaultTags
--- >>> parseTokenVariable ctx' tags' (Variable { content = "\"x Y z\"|upper|lower", line = 0 })
+-- >>> parseTokenVariable ctx' tags' (Variable { content = "\"x Y z\"|upper|lower", line = 0, raw = "{{ \"x Y z\"|upper|lower }}" })
 -- "x y z"
 parseTokenVariable :: Context -> Tags -> Token -> String
 parseTokenVariable ctx' (_, filters') (Variable { content = content, line = _ }) =

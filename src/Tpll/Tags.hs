@@ -32,7 +32,7 @@ import Data.Map.Strict (Map, fromList)
 -- final token for the @{% for x in list %}@ tag is the @{% endfor %}@ tag.
 data TagAction =
     Render ([Token], IO String)                         |
-    RenderBlock ([Context], Context, [Token], Token)
+    RenderBlock ([Context], Context, [Token], String)
 
 
 -- | Defines a template tag that accepts three arguments: `Context`, `Token`,
