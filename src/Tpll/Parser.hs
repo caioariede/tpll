@@ -13,6 +13,7 @@ import Tpll.Tokenizer (Token(Tag, Variable, Text, content, line, raw), tokenize)
 import Tpll.Context (Context, ctx, ContextValue(CStr, CInt, CList), resolveCtx, ctxToString)
 import Tpll.Tags (Tag, Tags, TagAction(Render, RenderBlock), tags, Filter)
 import Tpll.Tags.Default (getAllDefaultTags, upperFilter, lowerFilter)
+import Text.Regex.PCRE ((=~))
 
 
 import Prelude hiding (lookup)
@@ -86,7 +87,7 @@ renderBlock (ctx':ctxstack) tags' tokens untilToken acc =
 -- >>> let ctx' = ctx [("foo", CStr "bar"), ("bar", CStr "2")]
 -- >>> let tags' = tags [] []
 -- >>> let tokens = [Variable { content = "foo", line = 1, raw = "{{ foo }}" }, Tag { content = "x", line = 1, raw = "{% x %}" }, Variable { content = "bar", line = 2, raw = "{{ bar }}" }]
--- >>> let r = parseTokensUntil ctx' tags' tokens "x"
+-- >>> let r = parseTokensUntil ctx' tags' tokens "x|bar"
 -- >>> length r
 -- 1
 -- >>> head r
@@ -105,7 +106,7 @@ parseTokensUntil' ctx' tags' (token:tokens) untilToken acc =
         Tag { content = c } ->
             let currentToken = head $ words c
             in
-                if currentToken == untilToken then
+                if currentToken =~ untilToken then
                     acc
                 else
                     let (newtokens, result) = parseToken ctx' tags' (token:tokens)

@@ -4,7 +4,7 @@ Module      : Tpll.Tags.Default
 
 module Tpll.Tags.Default
 (
-    commentTag, firstOfTag, nowTag,
+    commentTag, firstOfTag, nowTag, forTag,
     upperFilter, lowerFilter,
     getAllDefaultTags
 ) where
@@ -163,7 +163,9 @@ nowTag ctx' token tokens =
 
 -- | @{% for x in list %} ... {% endfor %}@
 --
--- Iterates over all items in the list.
+-- @{% for x in list %} ... {% empty %} fallback {% endfor %}@
+--
+-- Iterates over all items in the list. If the @list@ is empty, render the @empty@ block if present.
 --
 -- __Examples:__
 --
@@ -177,6 +179,12 @@ nowTag ctx' token tokens =
 -- >>> parseString ctx' tags' "{% for x in list %}{{ x }},{% endfor %}"
 -- "1,2,3,5,"
 --
+-- >>> parseString ctx' tags' "{% for x in unknown %}{{ x }},{% empty %}foo{% endfor %}"
+-- "foo"
+--
+-- >>> parseString ctx' tags' "{% for x in list %}{{ x }}{% empty %}foo{% endfor %}"
+-- "1235"
+--
 forTag :: Context -> Token -> [Token] -> TagAction
 forTag ctx' token tokens =
     let Tag { content = content, line = _ } = token
@@ -187,13 +195,28 @@ forTag ctx' token tokens =
                 Render ([], return "<error>")
             Just pos ->
                 let ([vars], [_, arr]) = splitAt pos parts
-                    ctxstack = case lookup arr ctx' of
-                        Just lst ->
-                            forTagStack ctx' vars lst
-                        Nothing ->
-                            []
                 in
-                    RenderBlock (ctxstack, ctx', tokens, "endfor")
+                    case lookup arr ctx' of
+                        Just lst ->
+                            let ctxstack = forTagStack ctx' vars lst
+                            in
+                                RenderBlock (ctxstack, ctx', tokens, "endfor|empty")
+                        Nothing ->
+                            forTagEmpty ctx' tokens
+
+
+forTagEmpty :: Context -> [Token] -> TagAction
+forTagEmpty ctx' (token:tokens) =
+    case token of
+        Tag { content = content } ->
+            let (tag:_) = words content
+            in
+                if tag == "empty" then
+                    RenderBlock ([ctx'], ctx', tokens, "endfor")
+                else
+                    forTagEmpty ctx' tokens
+        _ ->
+            forTagEmpty ctx' tokens
 
 
 -- | Create a context stack for the "for" loop
