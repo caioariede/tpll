@@ -26,10 +26,10 @@ window.onload = function () {pageLoad();setSynopsis("mini_Tpll-Parser.html");};
 </code></strong><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>let Just (CStr r) = lookup &quot;foo&quot; ctx'
 </code></strong><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>r
 </code></strong>&quot;bar&quot;
-<code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>let [r] = parseTokens ctx' tags' [Variable { content = &quot;foo&quot;, line = 1 }]
+<code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>let [r] = parseTokens ctx' tags' [Variable { content = &quot;foo&quot;, line = 1, raw = &quot;{{ foo }}&quot; }]
 </code></strong><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>r
 </code></strong>&quot;bar&quot;
-<code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>let [r] = parseTokens ctx' tags' [Variable { content = &quot;unknown&quot;, line = 1 }]
+<code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>let [r] = parseTokens ctx' tags' [Variable { content = &quot;unknown&quot;, line = 1, raw = &quot;{{ unknown }}&quot; }]
 </code></strong><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>r
 </code></strong>&quot;&quot;
 </pre></div></div></div></div><div id="footer"><p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.16.1</p></div></body></html>
