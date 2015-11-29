@@ -1,5 +1,6 @@
 {-|
 Module      : Tpll.File
+Description : Functions to parse files
 -}
 
 module Tpll.File

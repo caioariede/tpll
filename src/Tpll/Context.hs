@@ -1,5 +1,6 @@
 {-|
 Module      : Tpll.Context
+Description : Functions to encapsulate values into contexts
 -}
 
 module Tpll.Context

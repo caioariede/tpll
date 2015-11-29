@@ -1,5 +1,6 @@
 {-|
 Module      : Tpll.Tags.Utils
+Description : Utility functions often used by template tags and filters
 -}
 
 module Tpll.Tags.Utils

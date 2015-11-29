@@ -1,5 +1,6 @@
 {-|
 Module      : Tpll.Tokenizer
+Description : Functions to transform strings in tokens
 -}
 
 module Tpll.Tokenizer

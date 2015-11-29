@@ -1,5 +1,6 @@
 {-|
 Module      : Tpll.Tags.Default
+Description : A collection of default template tags and filters
 -}
 
 module Tpll.Tags.Default

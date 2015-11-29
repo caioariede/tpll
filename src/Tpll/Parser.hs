@@ -1,5 +1,6 @@
 {-|
 Module      : Tpll.Parser
+Description : Functions to parse tokens
 -}
 
 module Tpll.Parser
