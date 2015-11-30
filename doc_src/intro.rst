@@ -1,5 +1,5 @@
-Introduction
-************
+The Basics
+**********
 
 **Tpll** is a Template Engine inspired by the `Django Template Language <https://docs.djangoproject.com/en/1.8/topics/templates/#the-django-template-language>`_.
 

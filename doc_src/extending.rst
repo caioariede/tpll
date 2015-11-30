@@ -1,11 +1,12 @@
 Extending
 *********
 
+You can extend Tpll's functionality by adding custom tags and filters.
 
-Creating custom template tags
-=============================
+Creating a custom tag
+=====================
 
-This is how you create the custom template tag ``{% hello %}``:
+Let's create a template tag that outputs a friendly hello message:
 
 .. code-block:: haskell
 
@@ -17,38 +18,37 @@ This is how you create the custom template tag ``{% hello %}``:
     helloTag ctx' token remainingTokens =
         Render (remainingTokens, return "Hello! :)")
 
-As you can see, the implementation is very straightforward, but there are some
-details that deserves nitpicking.
+The parameters passed to the template tags are:
 
-First of all, the parameters received by a template tag are:
-
-1. The current context (containing values passed to the template)
-2. The matched token
+1. The current context
+2. The token matched by this tag
 3. The next (or remaining) tokens
 
-Second, the function must return a ``TagAction``, which can be either
-``Render`` or ``RenderBlock``, as described below.
+The return value of a template tag is a ``TagAction``, which can be either
+``Render`` or ``RenderBlock`` and we describe them below.
 
 
-Simple rendering
-----------------
+Normal tag
+----------
 
-The ``helloTag`` example used above returns what we call here
-*simple rendering* and it's used this way:
+The ``helloTag`` example used above is what we call here a **normal tag** and
+uses the ``Render`` action:
 
 .. code-block:: haskell
 
     Render ([Token], IO String)
 
-The ``Render`` action receives the list of tokens not consumed by the template
-tag, and the ``IO String`` to be printed.
+The arguments passed to this action are the list of tokens not consumed by the
+tag and the ``IO String`` to be printed out.
 
 
-Block rendering
----------------
+Block tag
+---------
 
-Some template tags needs to consume blocks or even repeat the content of these
-blocks. As an example, the ``{% for ... %}`` template tag:
+The other type of template tag is the **block tag**, that returns a
+``RenderBlock`` action. Its most common use is to create a temporary context
+that will be used when consuming the block. A good example is the
+``{% for ... %}`` tag:
 
 .. code-block:: html
 
@@ -58,15 +58,54 @@ blocks. As an example, the ``{% for ... %}`` template tag:
     {% endfor %}
     </ul>
 
-To simplify our life, we use the ``RenderBlock`` action, that's used this way:
+It switches the context in every iteration of the loop. For this, we use the
+``RenderBlock`` action, that's used this way:
 
 .. code-block:: haskell
 
     RenderBlock ([Context], Context, [Token], String)
 
-And here is the explanation for each argument:
+Its arguments are:
 
-1. The first is a list of contexts which the block will be iterated over.
-2. The second is the context that will be used after the end of the block.
-3. The third is the list of the remaining tokens.
-4. The fourth is a string containing a regex pattern that identifies the token where the block must end.
+1. The list of contexts which the block will be iterated over.
+2. The context that will be used after the end of the block.
+3. The list of the remaining tokens.
+4. The string containing a regex pattern that identifies the token where the block must stop.
+
+This is how the ``RenderBlock`` action looks 
+This is an example of a ``RenderBlock`` action returned by the ``{% for ... %}`` tag:
+
+.. code-block:: haskell
+
+    RenderBlock (
+
+        -- context stack
+        [
+            ctx [("foo", CStr "bar"), ("item", CInt 1)],
+            ctx [("foo", CStr "bar"), ("item", CInt 2)],
+            ctx [("foo", CStr "bar"), ("item", CInt 3)],
+        ],
+
+        -- old context
+        ctx [("foo", CStr "bar")],
+
+        -- remaining tokens:
+        -- {{ foo }}: {{ item }}; {% endfor %}
+        [
+            Variable { content = "foo", line = 2, raw = "{{ foo }}"},
+            Text { content = ": ", line = 2, raw = "" },
+            Variable { content = "item", line = 2, raw = "{{ item }}"},
+            Text { content = "; ", line = 2, raw = "" },
+            Tag { content = "endfor", line = 2, raw = "{% endfor %}"}
+        ],
+
+        -- block delimiter
+        "endfor|empty"
+
+    )
+
+And the output for this ``RenderBlock`` action:
+
+.. code-block:: html
+
+    bar: 1; bar: 2; bar: 3;

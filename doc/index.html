@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Tpll 0.1.0.0 documentation" href="#" />
-    <link rel="next" title="Introduction" href="intro.html" /> 
+    <link rel="next" title="The Basics" href="intro.html" /> 
   </head>
   <body role="document">
     <div class="related" role="navigation" aria-label="related navigation">
@@ -34,7 +34,7 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="intro.html" title="Introduction"
+          <a href="intro.html" title="The Basics"
              accesskey="N">next</a> |</li>
         <li class="nav-item nav-item-0"><a href="#">Tpll 0.1.0.0 documentation</a> &raquo;</li> 
       </ul>
@@ -47,10 +47,41 @@
             
   <div class="section" id="welcome-to-tpll-s-documentation">
 <h1>Welcome to Tpll&#8217;s documentation!<a class="headerlink" href="#welcome-to-tpll-s-documentation" title="Permalink to this headline">¶</a></h1>
-<p>Contents:</p>
+<p><strong>Tpll</strong> is a Template Engine for Haskell that&#8217;s highly inspired in the
+<a class="reference external" href="https://docs.djangoproject.com/en/1.8/topics/templates/#the-django-template-language">Django Template Language</a>.</p>
+<p>This is what it looks like:</p>
+<div class="highlight-html"><div class="highlight"><pre><span class="nt">&lt;h1&gt;</span>Hello World!<span class="nt">&lt;/h1&gt;</span>
+
+<span class="nt">&lt;ul&gt;</span>
+    {% for item in list %}
+    <span class="nt">&lt;li&gt;</span>{{ item|upper }}
+    {% endfor %}
+<span class="nt">&lt;/ul&gt;</span>
+</pre></div>
+</div>
+<p>With the following context:</p>
+<div class="highlight-haskell"><div class="highlight"><pre><span class="kr">import</span> <span class="nn">Tpll.Context</span> <span class="p">(</span><span class="nf">ctx</span><span class="p">,</span> <span class="kt">ContextValue</span><span class="p">(</span><span class="kt">CList</span><span class="p">,</span> <span class="kt">CStr</span><span class="p">,</span> <span class="kt">CInt</span><span class="p">))</span>
+<span class="kr">import</span> <span class="nn">Tpll.Tags.Default</span> <span class="p">(</span><span class="nf">getAllDefaultTags</span><span class="p">)</span>
+
+<span class="kr">let</span> <span class="n">ctx&#39;</span> <span class="ow">=</span> <span class="n">ctx</span> <span class="p">[(</span><span class="s">&quot;list&quot;</span><span class="p">,</span> <span class="kt">CList</span> <span class="p">[</span><span class="kt">CStr</span> <span class="s">&quot;foo&quot;</span><span class="p">,</span> <span class="kt">CStr</span> <span class="s">&quot;bar&quot;</span><span class="p">,</span> <span class="kt">CInt</span> <span class="mi">42</span><span class="p">])]</span>
+
+<span class="nf">renderFile</span> <span class="s">&quot;test.html&quot;</span> <span class="n">ctx&#39;</span> <span class="n">getAllDefaultTags</span>
+</pre></div>
+</div>
+<p>Will output:</p>
+<div class="highlight-html"><div class="highlight"><pre><span class="nt">&lt;h1&gt;</span>Hello world!<span class="nt">&lt;/h1&gt;</span>
+
+<span class="nt">&lt;ul&gt;</span>
+    <span class="nt">&lt;li&gt;</span>FOO
+    <span class="nt">&lt;li&gt;</span>BAR
+    <span class="nt">&lt;li&gt;</span>42
+<span class="nt">&lt;/ul&gt;</span>
+</pre></div>
+</div>
+<p><strong>Table of Contents:</strong></p>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">The Basics</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#variables">Variables</a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#filters">Filters</a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#tags">Tags</a></li>
@@ -58,7 +89,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="extending.html">Extending</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="extending.html#creating-custom-template-tags">Creating custom template tags</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extending.html#creating-a-custom-tag">Creating a custom tag</a></li>
 </ul>
 </li>
 </ul>
@@ -87,7 +118,7 @@
 
   <h4>Next topic</h4>
   <p class="topless"><a href="intro.html"
-                        title="next chapter">Introduction</a></p>
+                        title="next chapter">The Basics</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -119,7 +150,7 @@
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="intro.html" title="Introduction"
+          <a href="intro.html" title="The Basics"
              >next</a> |</li>
         <li class="nav-item nav-item-0"><a href="#">Tpll 0.1.0.0 documentation</a> &raquo;</li> 
       </ul>
