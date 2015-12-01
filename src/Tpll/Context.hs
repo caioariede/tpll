@@ -118,7 +118,7 @@ resolveCtx ctx' str =
 -- >>> let ctx' = ctx []
 -- >>> let Nothing = resolveCtxNumber ctx' "1.2a"
 resolveCtxNumber :: Context -> String -> Maybe ContextValue
-resolveCtxNumber ctx' str =
+resolveCtxNumber _ str =
     if "." `isInfixOf` str then
         case readMaybe str :: Maybe Double of
             Just number ->

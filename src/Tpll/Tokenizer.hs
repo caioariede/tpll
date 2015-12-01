@@ -23,7 +23,8 @@ data Token =
     deriving (Show, Eq)
 
 
-regexTag = "({%.*?%}|{{.*?}}|{#.*?#})" :: String
+regexTag :: String
+regexTag = "({%.*?%}|{{.*?}}|{#.*?#})"
 
 
 -- | Count line breaks in text
@@ -113,27 +114,27 @@ tokenize text =
 
 
 tokenize' :: String -> Int -> [Token] -> [Token]
-tokenize' str line tokens =
+tokenize' str ln tokens =
     case nextPos str of
         Nothing ->
             if str == "" then
                 reverse tokens
             else
-                let newline = line + countLineBreaks str
+                let newline = ln + countLineBreaks str
                 in
                     reverse (getTextToken str newline : tokens)
 
-        Just (first, last) ->
+        Just (first, lst) ->
             if first > 0 then
-                let (head, rest) = splitAt first str
-                    newline = line + countLineBreaks head
+                let (h, rest) = splitAt first str
+                    newline = ln + countLineBreaks h
                 in
-                    tokenize' rest newline (getTextToken head line:tokens)
+                    tokenize' rest newline (getTextToken h ln:tokens)
             else
-                let (head, rest) = splitAt last str
-                    newline = line + countLineBreaks head
+                let (h, rest) = splitAt lst str
+                    newline = ln + countLineBreaks h
                 in
-                    case getToken head line of
+                    case getToken h ln of
                         Nothing ->
                             tokenize' rest newline tokens
                         Just token ->
@@ -147,8 +148,8 @@ tokenize' str line tokens =
 -- >>> getTextToken "foobar" 2
 -- Text {content = "foobar", line = 2, raw = ""}
 getTextToken :: String -> Int -> Token
-getTextToken str line =
-    Text { content = str, line = line, raw = "" }
+getTextToken str ln =
+    Text { content = str, line = ln, raw = "" }
 
 
 -- | Get a token for the given string
@@ -164,13 +165,13 @@ getTextToken str line =
 -- >>> getToken "{% x y z %}" 1
 -- Just (Tag {content = "x y z", line = 1, raw = "{% x y z %}"})
 getToken :: String -> Int -> Maybe Token
-getToken text line =
+getToken text ln =
     case take 2 text of
         "{{" ->
-            Just Variable { content = tagText text, line = line, raw = text }
+            Just Variable { content = tagText text, line = ln, raw = text }
         "{#" ->
-            Just Comment { content = tagText text, line = line, raw = text }
+            Just Comment { content = tagText text, line = ln, raw = text }
         "{%" ->
-            Just Tag { content = tagText text, line = line, raw = text }
+            Just Tag { content = tagText text, line = ln, raw = text }
         _ ->
             Nothing

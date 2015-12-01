@@ -1,6 +1,6 @@
 {-|
 Module      : Tpll.Tags.Default
-Description : A collection of default template tags and filters
+Description : A collection of default template tags
 -}
 
 module Tpll.Tags.Default
@@ -15,6 +15,7 @@ import Tpll.Context (Context, ctx, ContextValue(CStr, CInt, CDouble, CList, CAss
 import Tpll.Tokenizer (Token(Tag, Variable, Text, Comment, content, line, raw))
 import Tpll.Tags (TagAction(Render, RenderBlock), Tags, tags)
 import Tpll.Tags.Utils (resolveParts)
+import Tpll.Tags.DefaultFilters (lowerFilter, upperFilter)
 
 
 import Prelude hiding (lookup)
@@ -24,7 +25,6 @@ import Data.Time.Format (formatTime, defaultTimeLocale)
 import Data.Map.Strict (lookup, insert)
 import Data.List (elemIndex)
 import Data.List.Split (splitOn)
-import Data.Char (toUpper, toLower)
 
 
 -- | @{% comment %} ... {% endcomment %}@
@@ -314,65 +314,6 @@ verbatimTagRender (token:tokens) str =
             verbatimTagRender tokens (str ++ r)
         Comment { raw = r } ->
             verbatimTagRender tokens (str ++ r)
-    
-
-
--- | @{{ arg|upper }}@
---
--- Transforms text to uppercase.
---
--- __Examples:__
---
--- >>> import Tpll.Parser (parseString)
--- >>> import Tpll.Context (ctx)
--- >>> import Tpll.Tags.Default (getAllDefaultTags)
--- >>>
--- >>> let ctx' = ctx [("x", CStr "foo"), ("y", CDouble 3.14)]
--- >>> let tags' = getAllDefaultTags
---
--- >>> parseString ctx' tags' "{{ x|upper }}"
--- "FOO"
---
--- >>> parseString ctx' tags' "{{ y|upper }}"
--- "3.14"
-upperFilter :: Context -> Maybe ContextValue -> Maybe ContextValue
-upperFilter ctx' val =
-    case val of
-        Just (CStr a) ->
-            Just (CStr (map toUpper a))
-        Just b ->
-            Just b
-        Nothing ->
-            Nothing
-
-
--- | @{{ arg|lower }}@
---
--- Transforms text to lowercase.
---
--- __Examples:__
---
--- >>> import Tpll.Parser (parseString)
--- >>> import Tpll.Context (ctx)
--- >>> import Tpll.Tags.Default (getAllDefaultTags)
--- >>>
--- >>> let ctx' = ctx [("x", CStr "Bar"), ("y", CDouble 3.14)]
--- >>> let tags' = getAllDefaultTags
---
--- >>> parseString ctx' tags' "{{ x|lower }}"
--- "bar"
---
--- >>> parseString ctx' tags' "{{ y|lower }}"
--- "3.14"
-lowerFilter :: Context -> Maybe ContextValue -> Maybe ContextValue
-lowerFilter ctx' val =
-    case val of
-        Just (CStr a) ->
-            Just (CStr (map toLower a))
-        Just b ->
-            Just b
-        Nothing ->
-            Nothing
 
 
 -- | Returns all default template tags and filters.
