@@ -6,7 +6,7 @@ module Tpll.Tags
 (
     Tag,
     Filter,
-    Tags,
+    Tags(Tags),
     TagAction(Render, RenderBlock),
     tags
 ) where
@@ -39,7 +39,7 @@ data TagAction =
 -- and the list of remaining tokens, not consumed by the template tag.
 --
 -- Returns a `TagAction`.
-type Tag = Context -> Token -> [Token] -> TagAction
+type Tag = Context -> Tags -> Token -> [Token] -> TagAction
 
 
 -- | Defines a template filter that accepts two arguments: `Context` and
@@ -48,10 +48,10 @@ type Filter = Context -> Maybe ContextValue -> Maybe ContextValue
 
 
 -- | Defines two maps containing template tags (`Tag`) and filters (`Filter`).
-type Tags = (Map String Tag, Map String Filter)
+data Tags = Tags (Map String Tag, Map String Filter)
 
 
 -- | Constructs the `Tags` containing template tags and filters.
 tags :: [(String, Tag)] -> [(String, Filter)] -> Tags
 tags tags' filters' =
-    (fromList tags', fromList filters')
+    Tags (fromList tags', fromList filters')

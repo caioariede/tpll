@@ -42,8 +42,8 @@ import Data.Char (toUpper, toLower)
 --
 -- >>> parseString ctx' tags' "abra{% comment %} X Y {% endcomment %}cadabra"
 -- "abracadabra"
-commentTag :: Context -> Token -> [Token] -> TagAction
-commentTag ctx' _ tokens =
+commentTag :: Context -> Tags -> Token -> [Token] -> TagAction
+commentTag ctx' _ _ tokens =
     Render (commentTag' ctx' tokens, return "")
 
 commentTag' :: Context -> [Token] -> [Token]
@@ -79,12 +79,12 @@ commentTag' ctx' (token:tokens) =
 --
 -- >>> parseString ctx' tags' "{% firstof a c %}"
 -- ""
-firstOfTag :: Context -> Token -> [Token] -> TagAction
-firstOfTag ctx' token tokens =
+firstOfTag :: Context -> Tags -> Token -> [Token] -> TagAction
+firstOfTag ctx' tags' token tokens =
     let Tag { content = content, line = _ } = token
         (_, parts) = splitAt 1 $ words content
     in
-        Render (tokens, return $ firstOfTag' ctx' $ resolveParts ctx' parts)
+        Render (tokens, return $ firstOfTag' ctx' $ resolveParts ctx' tags' parts)
 
 
 firstOfTag' :: Context -> [Maybe ContextValue] -> String
@@ -143,8 +143,8 @@ firstOfTag' ctx' (x:xs) =
 --      print $ id $ a == b
 -- :}
 -- True
-nowTag :: Context -> Token -> [Token] -> TagAction
-nowTag ctx' token tokens =
+nowTag :: Context -> Tags -> Token -> [Token] -> TagAction
+nowTag ctx' _ token tokens =
     let Tag { content = content, line = _ } = token
         parts = tail $ words content
 
@@ -186,8 +186,8 @@ nowTag ctx' token tokens =
 -- >>> parseString ctx' tags' "{% for x in list %}{{ x }}{% empty %}foo{% endfor %}"
 -- "1235"
 --
-forTag :: Context -> Token -> [Token] -> TagAction
-forTag ctx' token tokens =
+forTag :: Context -> Tags -> Token -> [Token] -> TagAction
+forTag ctx' _ token tokens =
     let Tag { content = content, line = _ } = token
         (_, parts) = splitAt 1 $ words content
     in
@@ -256,11 +256,11 @@ forTagStack ctx' key val =
 --
 -- >>> parseString ctx' tags' "{% with x=\"foo\" y=2 %}{{ y }}{% endwith %}"
 -- "2"
-withTag :: Context -> Token -> [Token] -> TagAction
-withTag ctx' token tokens =
+withTag :: Context -> Tags -> Token -> [Token] -> TagAction
+withTag ctx' _ token tokens =
     let Tag { content = content, line = _ } = token
         parts = tail $ words content
-        kvs = map (splitOn "=") $ parts
+        kvs = map (splitOn "=") parts
         newCtx = withTagCtx ctx' kvs
     in
         RenderBlock ([newCtx], ctx', tokens, "endwith")
@@ -292,8 +292,8 @@ withTagCtx ctx' ([key, value]:xs) =
 --
 -- >>> parseString ctx' tags' "{% verbatim %}{{ x }}{%  y %}{# z  #} {% endverbatim %}"
 -- "{{ x }}{%  y %}{# z  #} "
-verbatimTag :: Context -> Token -> [Token] -> TagAction
-verbatimTag ctx' _ tokens =
+verbatimTag :: Context -> Tags -> Token -> [Token] -> TagAction
+verbatimTag ctx' _ _ tokens =
     verbatimTagRender tokens []
 
 verbatimTagRender :: [Token] -> String -> TagAction

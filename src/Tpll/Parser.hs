@@ -12,16 +12,15 @@ module Tpll.Parser
 
 import Tpll.Tokenizer (Token(Tag, Variable, Text, content, line, raw), tokenize)
 import Tpll.Context (Context, ctx, ContextValue(CStr, CInt, CList), resolveCtx, ctxToString)
-import Tpll.Tags (Tag, Tags, TagAction(Render, RenderBlock), tags, Filter)
+import Tpll.Tags (Tag, Tags(Tags), TagAction(Render, RenderBlock), tags, Filter)
 import Tpll.Tags.Default (getAllDefaultTags, upperFilter, lowerFilter)
+import Tpll.Tags.Utils (resolveValue)
 import Text.Regex.PCRE ((=~))
 
 
 import Prelude hiding (lookup)
 import Control.Monad (liftM2)
 import Data.Map.Strict (lookup)
-import Data.List.Split (splitOn)
-import Data.Maybe (mapMaybe)
 
 
 -- | Consume tag token
@@ -34,13 +33,14 @@ import Data.Maybe (mapMaybe)
 -- >>> r
 -- "<error>"
 consumeTag :: Context -> Tags -> Token -> [Token] -> TagAction
-consumeTag ctx' (tags', _) token tokens =
+consumeTag ctx' tags' token tokens =
     let Tag { content = content, line = _ } = token
+        Tags (onlytags, _) = tags'
         ([name], parts) = splitAt 1 $ words content
     in
-        case lookup name tags' of
+        case lookup name onlytags of
             Just fn ->
-                fn ctx' token tokens
+                fn ctx' tags' token tokens
             Nothing ->
                 Render (tokens, return "<error>")
 
@@ -160,40 +160,8 @@ parseToken ctx' tags' (token:tokens) =
 -- >>> parseTokenVariable ctx' tags' (Variable { content = "\"x Y z\"|upper|lower", line = 0, raw = "{{ \"x Y z\"|upper|lower }}" })
 -- "x y z"
 parseTokenVariable :: Context -> Tags -> Token -> String
-parseTokenVariable ctx' (_, filters') (Variable { content = content, line = _ }) =
-    let (key:filters) = splitOn "|" content
-        val = resolveCtx ctx' key
-        pipeline = mapMaybe (`lookup` filters') filters
-        result = runFilters ctx' val pipeline
-    in
-        ctxToString result
-
-
--- | Run filter pipeline over value
---
--- Examples:
---
--- >>> let ctx' = ctx []
--- >>> let filters = [upperFilter]
--- >>> let Just (CStr r) = runFilters ctx' (Just (CStr "foo")) filters
--- >>> r
--- "FOO"
---
--- >>> let ctx' = ctx []
--- >>> let filters = []
--- >>> let Just (CStr r) = runFilters ctx' (Just (CStr "foo")) filters
--- >>> r
--- "foo"
---
--- >>> let ctx' = ctx []
--- >>> let filters = [upperFilter, lowerFilter]
--- >>> let Just (CStr r) = runFilters ctx' (Just (CStr "fooBar")) filters
--- >>> r
--- "foobar"
-runFilters :: Context -> Maybe ContextValue -> [Filter] -> Maybe ContextValue
-runFilters ctx' val [] = val
-runFilters ctx' val (fn:filters) =
-    runFilters ctx' (fn ctx' val) filters
+parseTokenVariable ctx' tags' (Variable { content = content, line = _ }) =
+    ctxToString $ resolveValue ctx' tags' content
 
 
 parseTokenTag :: Context -> Tags -> Token -> [Token] -> ([Token], IO String)
@@ -212,8 +180,8 @@ parseTokenTag ctx' tags' token tokens =
 -- Examples:
 --
 -- >>> let ctx' = ctx []
--- >>> parseString ctx' getAllDefaultTags "foo{% firstof x \"bar\" %}bar"
--- "foobarbar"
+-- >>> parseString ctx' getAllDefaultTags "foo{% firstof x \"bar\"|upper %}bar"
+-- "fooBARbar"
 --
 -- >>> let ctx' = ctx []
 -- >>> parseString ctx' getAllDefaultTags "foo{% firstof 1 2 %}bar"
