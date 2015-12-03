@@ -5,7 +5,7 @@ Description : A collection of default template filters
 
 module Tpll.Tags.DefaultFilters
 (
-    upperFilter, lowerFilter
+    upperFilter, lowerFilter, capFirstFilter
 )
 where
 
@@ -71,4 +71,31 @@ lowerFilter _ val =
         Just b ->
             Just b
         Nothing ->
+            Nothing
+
+
+-- | @{{ arg|capfirst }}@
+--
+-- Capitalizes the first character of the value.
+--
+-- __Examples:__
+--
+-- >>> import Tpll.Parser (parseString)
+-- >>> import Tpll.Context (ctx, ContextValue(CStr))
+-- >>> import Tpll.Tags.Default (getAllDefaultTags)
+-- >>>
+-- >>> let ctx' = ctx [("x", CStr "this is a string.")]
+-- >>> let tags' = getAllDefaultTags
+--
+-- >>> parseString ctx' tags' "{{ x|capfirst }}"
+-- "This is a string."
+--
+-- >>> parseString ctx' tags' "{{ y|capfirst }}"
+-- ""
+capFirstFilter :: Context -> Maybe ContextValue -> Maybe ContextValue
+capFirstFilter _ val =
+    case val of
+        Just (CStr (x:xs)) ->
+            Just (CStr (toUpper x : xs))
+        _ ->
             Nothing

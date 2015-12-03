@@ -15,7 +15,7 @@ import Tpll.Context (Context, ctx, ContextValue(CStr, CInt, CDouble, CList, CAss
 import Tpll.Tokenizer (Token(Tag, Variable, Text, Comment, content, line, raw))
 import Tpll.Tags (TagAction(Render, RenderBlock), Tags, tags)
 import Tpll.Tags.Utils (resolveParts)
-import Tpll.Tags.DefaultFilters (lowerFilter, upperFilter)
+import Tpll.Tags.DefaultFilters (lowerFilter, upperFilter, capFirstFilter)
 
 
 import Prelude hiding (lookup)
@@ -328,5 +328,6 @@ getAllDefaultTags =
         ("verbatim", verbatimTag)
     ] [
         ("upper", upperFilter),
-        ("lower", lowerFilter)
+        ("lower", lowerFilter),
+        ("capfirst", capFirstFilter)
     ]
