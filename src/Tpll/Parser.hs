@@ -13,7 +13,7 @@ module Tpll.Parser
 import Tpll.Tokenizer (Token(Tag, Variable, Text, content, line, raw), tokenize)
 import Tpll.Context (Context, ctx, ContextValue(CStr, CInt, CList), resolveCtx, ctxToString)
 import Tpll.Tags (Tag, Tags(Tags), TagAction(Render, RenderBlock), tags, Filter)
-import Tpll.Tags.Default (getAllDefaultTags, upperFilter, lowerFilter)
+import Tpll.Tags.Default (getAllDefaultTags)
 import Tpll.Tags.Utils (resolveValue)
 import Text.Regex.PCRE ((=~))
 

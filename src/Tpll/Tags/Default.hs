@@ -6,7 +6,6 @@ Description : A collection of default template tags
 module Tpll.Tags.Default
 (
     commentTag, firstOfTag, nowTag, forTag,
-    upperFilter, lowerFilter,
     getAllDefaultTags
 ) where
 
@@ -15,7 +14,8 @@ import Tpll.Context (Context, ctx, ContextValue(CStr, CInt, CDouble, CList, CAss
 import Tpll.Tokenizer (Token(Tag, Variable, Text, Comment, content, line, raw))
 import Tpll.Tags (TagAction(Render, RenderBlock), Tags, tags)
 import Tpll.Tags.Utils (resolveParts)
-import Tpll.Tags.DefaultFilters (lowerFilter, upperFilter, capFirstFilter)
+import Tpll.Tags.DefaultFilters (lowerFilter, upperFilter, capFirstFilter,
+    firstFilter)
 
 
 import Prelude hiding (lookup)
@@ -329,5 +329,6 @@ getAllDefaultTags =
     ] [
         ("upper", upperFilter),
         ("lower", lowerFilter),
-        ("capfirst", capFirstFilter)
+        ("capfirst", capFirstFilter),
+        ("first", firstFilter)
     ]

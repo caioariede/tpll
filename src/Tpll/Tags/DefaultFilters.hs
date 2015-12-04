@@ -5,12 +5,12 @@ Description : A collection of default template filters
 
 module Tpll.Tags.DefaultFilters
 (
-    upperFilter, lowerFilter, capFirstFilter
+    upperFilter, lowerFilter, capFirstFilter, firstFilter
 )
 where
 
 
-import Tpll.Context (Context, ContextValue(CStr))
+import Tpll.Context (Context, ContextValue(CStr, CList))
 
 
 import Data.Char (toUpper, toLower)
@@ -97,5 +97,29 @@ capFirstFilter _ val =
     case val of
         Just (CStr (x:xs)) ->
             Just (CStr (toUpper x : xs))
+        _ ->
+            Nothing
+
+
+-- | @{{ arg|first }}@
+--
+-- Returns the first item in a list.
+--
+-- __Examples:__
+--
+-- >>> import Tpll.Parser (parseString)
+-- >>> import Tpll.Context (ctx, ContextValue(CInt, CList))
+-- >>> import Tpll.Tags.Default (getAllDefaultTags)
+-- >>>
+-- >>> let ctx' = ctx [("x", CList [CInt 42, CInt 1, CInt 2])]
+-- >>> let tags' = getAllDefaultTags
+--
+-- >>> parseString ctx' tags' "{{ x|first }}"
+-- "42"
+firstFilter :: Context -> Maybe ContextValue -> Maybe ContextValue
+firstFilter _ val =
+    case val of
+        Just (CList (x:xs)) ->
+            Just x
         _ ->
             Nothing
