@@ -6,7 +6,7 @@ Description : Functions to encapsulate values into contexts
 module Tpll.Context
 (
     Context,
-    ContextValue(CStr, CInt, CDouble, CList, CAssoc, is_safe),
+    ContextValue(CStr, CInt, CDouble, CList, CAssoc, isSafe),
     cStr, cInt, cInteger, cDouble, cAssoc, cList,
     ctx,
     resolveCtx,
@@ -34,12 +34,12 @@ import Text.HTML.TagSoup.Entity (escapeXML)
 -- CList [cInt 1, cStr "foo", cAssoc (cInt 2, cStr "bar")]
 -- @
 data ContextValue =
-    CStr        { is_safe :: Bool, str      :: String                       } |
-    CInt        { is_safe :: Bool, int      :: Int                          } |
-    CInteger    { is_safe :: Bool, integer  :: Integer                      } |
-    CDouble     { is_safe :: Bool, double   :: Double                       } |
-    CAssoc      { is_safe :: Bool, assoc    :: (ContextValue, ContextValue) } |
-    CList       { is_safe :: Bool, list     :: [ContextValue]               }
+    CStr        { isSafe :: Bool, str      :: String                       } |
+    CInt        { isSafe :: Bool, int      :: Int                          } |
+    CInteger    { isSafe :: Bool, integer  :: Integer                      } |
+    CDouble     { isSafe :: Bool, double   :: Double                       } |
+    CAssoc      { isSafe :: Bool, assoc    :: (ContextValue, ContextValue) } |
+    CList       { isSafe :: Bool, list     :: [ContextValue]               }
 
     deriving (Eq)
 

@@ -10,7 +10,7 @@ module Tpll.Tags.DefaultFilters
 where
 
 
-import Tpll.Context (Context, ContextValue(CStr, CList), is_safe)
+import Tpll.Context (Context, ContextValue(CStr, CList), isSafe)
 
 
 import Data.Char (toUpper, toLower)
@@ -149,4 +149,4 @@ safeFilter _ val =
         Nothing ->
             Nothing
         Just v ->
-            Just (v { is_safe = True })
+            Just (v { isSafe = True })
