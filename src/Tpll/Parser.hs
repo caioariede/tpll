@@ -11,7 +11,7 @@ module Tpll.Parser
 
 
 import Tpll.Tokenizer (Token(Tag, Variable, Text, content, line, raw), tokenize)
-import Tpll.Context (Context, ctx, ContextValue(CStr, CInt, CList), resolveCtx, ctxToString)
+import Tpll.Context (Context, ctx, ContextValue(CStr, CInt, CList), cStr, cInt, cList, resolveCtx, ctxToString)
 import Tpll.Tags (Tag, Tags(Tags), TagAction(Render, RenderBlock), tags, Filter)
 import Tpll.Tags.Default (getAllDefaultTags)
 import Tpll.Tags.Utils (resolveValue)
@@ -49,9 +49,9 @@ consumeTag ctx' tags' token tokens =
 --
 -- Examples:
 --
--- >>> let ctx' = ctx [("foo", CStr "bar"), ("bar", CStr "2")]
+-- >>> let ctx' = ctx [("foo", cStr "bar"), ("bar", cStr "2")]
 -- >>> let tags' = tags [] []
--- >>> let Just (CStr r) = lookup "foo" ctx'
+-- >>> let Just (CStr False r) = lookup "foo" ctx'
 -- >>> r
 -- "bar"
 -- >>> let [r] = parseTokens ctx' tags' [Variable { content = "foo", line = 1, raw = "{{ foo }}" }]
@@ -85,7 +85,7 @@ renderBlock (ctx':ctxstack) tags' tokens untilToken acc =
 --
 -- Examples:
 --
--- >>> let ctx' = ctx [("foo", CStr "bar"), ("bar", CStr "2")]
+-- >>> let ctx' = ctx [("foo", cStr "bar"), ("bar", cStr "2")]
 -- >>> let tags' = tags [] []
 -- >>> let tokens = [Variable { content = "foo", line = 1, raw = "{{ foo }}" }, Tag { content = "x", line = 1, raw = "{% x %}" }, Variable { content = "bar", line = 2, raw = "{{ bar }}" }]
 -- >>> let r = parseTokensUntil ctx' tags' tokens "x|bar"
@@ -123,7 +123,7 @@ parseTokensUntil' ctx' tags' (token:tokens) untilToken acc =
 --
 -- Examples:
 --
--- >>> let ctx' = ctx [("foo", CStr "foo")]
+-- >>> let ctx' = ctx [("foo", cStr "foo")]
 -- >>> let tags' = tags [] []
 -- >>> let (_, r) = parseToken ctx' tags' [Variable { content = "foo", line = 1, raw = "{{ foo }}" }]
 -- >>> r
@@ -145,17 +145,17 @@ parseToken ctx' tags' (token:tokens) =
 --
 -- Examples:
 --
--- >>> let ctx' = ctx [("foo", CStr "foo")]
+-- >>> let ctx' = ctx [("foo", cStr "foo")]
 -- >>> let tags' = tags [] []
 -- >>> parseTokenVariable ctx' tags' (Variable { content = "foo", line = 0, raw = "{{ foo }}" })
 -- "foo"
 --
--- >>> let ctx' = ctx [("foo", CStr "foo")]
+-- >>> let ctx' = ctx [("foo", cStr "foo")]
 -- >>> let tags' = getAllDefaultTags
 -- >>> parseTokenVariable ctx' tags' (Variable { content = "foo|upper", line = 0, raw = "{{ foo|upper }}" })
 -- "FOO"
 --
--- >>> let ctx' = ctx [("foo", CStr "foo")]
+-- >>> let ctx' = ctx [("foo", cStr "foo")]
 -- >>> let tags' = getAllDefaultTags
 -- >>> parseTokenVariable ctx' tags' (Variable { content = "\"x Y z\"|upper|lower", line = 0, raw = "{{ \"x Y z\"|upper|lower }}" })
 -- "x y z"
@@ -191,18 +191,18 @@ parseTokenTag ctx' tags' token tokens =
 -- >>> parseString ctx' getAllDefaultTags "foo{% firstof 2.0 %}bar"
 -- "foo2.0bar"
 --
--- >>> let ctx' = ctx [("bang", CStr ""), ("bar", CInt 2)]
+-- >>> let ctx' = ctx [("bang", cStr ""), ("bar", cInt 2)]
 -- >>> parseString ctx' getAllDefaultTags "foo{% firstof bang %}bar"
 -- "foobar"
 --
 -- >>> parseString ctx' getAllDefaultTags "foo{% firstof bang bar %}bar"
 -- "foo2bar"
 --
--- >>> let ctx' = ctx [("list", CList [CInt 1, CInt 2, CInt 3, CInt 5])]
+-- >>> let ctx' = ctx [("list", cList [cInt 1, cInt 2, cInt 3, cInt 5])]
 -- >>> parseString ctx' getAllDefaultTags "{% for x in list %}\n{{ x }}{% endfor %}"
 -- "\n1\n2\n3\n5"
 --
--- >>> let ctx' = ctx [("list", CList [CStr "a", CStr "b"])]
+-- >>> let ctx' = ctx [("list", cList [cStr "a", cStr "b"])]
 -- >>> parseString ctx' getAllDefaultTags "{% for x in list %}\n{{ x|upper }}{% endfor %}"
 -- "\nA\nB"
 parseString :: Context -> Tags -> String -> IO String

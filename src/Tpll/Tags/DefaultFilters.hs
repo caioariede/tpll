@@ -5,12 +5,12 @@ Description : A collection of default template filters
 
 module Tpll.Tags.DefaultFilters
 (
-    upperFilter, lowerFilter, capFirstFilter, firstFilter
+    upperFilter, lowerFilter, capFirstFilter, firstFilter, safeFilter
 )
 where
 
 
-import Tpll.Context (Context, ContextValue(CStr, CList))
+import Tpll.Context (Context, ContextValue(CStr, CList), is_safe)
 
 
 import Data.Char (toUpper, toLower)
@@ -23,10 +23,10 @@ import Data.Char (toUpper, toLower)
 -- __Examples:__
 --
 -- >>> import Tpll.Parser (parseString)
--- >>> import Tpll.Context (ctx, ContextValue(CStr, CDouble))
+-- >>> import Tpll.Context (ctx, cStr, cDouble)
 -- >>> import Tpll.Tags.Default (getAllDefaultTags)
 -- >>>
--- >>> let ctx' = ctx [("x", CStr "foo"), ("y", CDouble 3.14)]
+-- >>> let ctx' = ctx [("x", cStr "foo"), ("y", cDouble 3.14)]
 -- >>> let tags' = getAllDefaultTags
 --
 -- >>> parseString ctx' tags' "{{ x|upper }}"
@@ -37,8 +37,8 @@ import Data.Char (toUpper, toLower)
 upperFilter :: Context -> Maybe ContextValue -> Maybe ContextValue
 upperFilter _ val =
     case val of
-        Just (CStr a) ->
-            Just (CStr (map toUpper a))
+        Just (CStr safe a) ->
+            Just (CStr safe (map toUpper a))
         Just b ->
             Just b
         Nothing ->
@@ -52,10 +52,10 @@ upperFilter _ val =
 -- __Examples:__
 --
 -- >>> import Tpll.Parser (parseString)
--- >>> import Tpll.Context (ctx, ContextValue(CStr, CDouble))
+-- >>> import Tpll.Context (ctx, cStr, cDouble)
 -- >>> import Tpll.Tags.Default (getAllDefaultTags)
 -- >>>
--- >>> let ctx' = ctx [("x", CStr "Bar"), ("y", CDouble 3.14)]
+-- >>> let ctx' = ctx [("x", cStr "Bar"), ("y", cDouble 3.14)]
 -- >>> let tags' = getAllDefaultTags
 --
 -- >>> parseString ctx' tags' "{{ x|lower }}"
@@ -66,8 +66,8 @@ upperFilter _ val =
 lowerFilter :: Context -> Maybe ContextValue -> Maybe ContextValue
 lowerFilter _ val =
     case val of
-        Just (CStr a) ->
-            Just (CStr (map toLower a))
+        Just (CStr safe a) ->
+            Just (CStr safe (map toLower a))
         Just b ->
             Just b
         Nothing ->
@@ -81,10 +81,10 @@ lowerFilter _ val =
 -- __Examples:__
 --
 -- >>> import Tpll.Parser (parseString)
--- >>> import Tpll.Context (ctx, ContextValue(CStr))
+-- >>> import Tpll.Context (ctx, cStr)
 -- >>> import Tpll.Tags.Default (getAllDefaultTags)
 -- >>>
--- >>> let ctx' = ctx [("x", CStr "this is a string.")]
+-- >>> let ctx' = ctx [("x", cStr "this is a string.")]
 -- >>> let tags' = getAllDefaultTags
 --
 -- >>> parseString ctx' tags' "{{ x|capfirst }}"
@@ -95,8 +95,8 @@ lowerFilter _ val =
 capFirstFilter :: Context -> Maybe ContextValue -> Maybe ContextValue
 capFirstFilter _ val =
     case val of
-        Just (CStr (x:xs)) ->
-            Just (CStr (toUpper x : xs))
+        Just (CStr safe (x:xs)) ->
+            Just (CStr safe (toUpper x : xs))
         _ ->
             Nothing
 
@@ -108,10 +108,10 @@ capFirstFilter _ val =
 -- __Examples:__
 --
 -- >>> import Tpll.Parser (parseString)
--- >>> import Tpll.Context (ctx, ContextValue(CInt, CList))
+-- >>> import Tpll.Context (ctx, cInt, cList)
 -- >>> import Tpll.Tags.Default (getAllDefaultTags)
 -- >>>
--- >>> let ctx' = ctx [("x", CList [CInt 42, CInt 1, CInt 2])]
+-- >>> let ctx' = ctx [("x", cList [cInt 42, cInt 1, cInt 2])]
 -- >>> let tags' = getAllDefaultTags
 --
 -- >>> parseString ctx' tags' "{{ x|first }}"
@@ -119,7 +119,34 @@ capFirstFilter _ val =
 firstFilter :: Context -> Maybe ContextValue -> Maybe ContextValue
 firstFilter _ val =
     case val of
-        Just (CList (x:xs)) ->
+        Just (CList _ (x:xs)) ->
             Just x
         _ ->
             Nothing
+
+
+-- | @{{ arg|safe }}@
+--
+-- Marks a string as safe for priting HTML.
+--
+-- __Examples:__
+--
+-- >>> import Tpll.Parser (parseString)
+-- >>> import Tpll.Context (ctx, cStr)
+-- >>> import Tpll.Tags.Default (getAllDefaultTags)
+-- >>>
+-- >>> let ctx' = ctx [("x", cStr "<b>foo</b>")]
+-- >>> let tags' = getAllDefaultTags
+--
+-- >>> parseString ctx' tags' "{{ x }}"
+-- "&lt;b&gt;foo&lt;/b&gt;"
+--
+-- >>> parseString ctx' tags' "{{ x|safe }}"
+-- "<b>foo</b>"
+safeFilter :: Context -> Maybe ContextValue -> Maybe ContextValue
+safeFilter _ val =
+    case val of
+        Nothing ->
+            Nothing
+        Just v ->
+            Just (v { is_safe = True })

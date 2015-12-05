@@ -9,7 +9,7 @@ module Tpll.File
 where
 
 
-import Tpll.Context (ctx, Context, ContextValue(CStr))
+import Tpll.Context (ctx, Context, cStr)
 import Tpll.Tags (Tags)
 import Tpll.Tags.Default (getAllDefaultTags)
 import Tpll.Parser (parseString)
@@ -19,7 +19,7 @@ import Tpll.Parser (parseString)
 --
 -- Examples:
 --
--- >>> let ctx' = ctx [("a", CStr ""), ("b", CStr "42"), ("c", CStr "")]
+-- >>> let ctx' = ctx [("a", cStr ""), ("b", cStr "42"), ("c", cStr "")]
 -- >>> let tags' = getAllDefaultTags
 -- >>> renderFile "misc/index.html" ctx' tags'
 -- "42\n"

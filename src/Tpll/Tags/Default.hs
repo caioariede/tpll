@@ -10,12 +10,12 @@ module Tpll.Tags.Default
 ) where
 
 
-import Tpll.Context (Context, ctx, ContextValue(CStr, CInt, CDouble, CList, CAssoc), resolveCtx, ctxToString)
+import Tpll.Context (Context, ctx, ContextValue(CStr, CInt, CDouble, CList, CAssoc), cStr, cList, cInt, resolveCtx, ctxToString)
 import Tpll.Tokenizer (Token(Tag, Variable, Text, Comment, content, line, raw))
 import Tpll.Tags (TagAction(Render, RenderBlock), Tags, tags)
 import Tpll.Tags.Utils (resolveParts)
 import Tpll.Tags.DefaultFilters (lowerFilter, upperFilter, capFirstFilter,
-    firstFilter)
+    firstFilter, safeFilter)
 
 
 import Prelude hiding (lookup)
@@ -71,7 +71,7 @@ commentTag' ctx' (token:tokens) =
 -- >>> import Tpll.Context (ctx)
 -- >>> import Tpll.Tags.Default (getAllDefaultTags)
 -- >>>
--- >>> let ctx' = ctx [("a", CStr ""), ("b", CStr "x")]
+-- >>> let ctx' = ctx [("a", cStr ""), ("b", cStr "x")]
 -- >>> let tags' = getAllDefaultTags
 --
 -- >>> parseString ctx' tags' "{% firstof a b %}"
@@ -91,7 +91,7 @@ firstOfTag' :: Context -> [Maybe ContextValue] -> String
 firstOfTag' _ [] = ""
 firstOfTag' ctx' (x:xs) =
     case x of
-        Just (CStr x) ->
+        Just (CStr _ x) ->
             if x == "" then
                 firstOfTag' ctx' xs
             else
@@ -114,7 +114,7 @@ firstOfTag' ctx' (x:xs) =
 -- >>> import Tpll.Context (ctx)
 -- >>> import Tpll.Tags.Default (getAllDefaultTags)
 -- >>>
--- >>> let ctx' = ctx [("a", CStr ""), ("b", CStr "x")]
+-- >>> let ctx' = ctx [("a", cStr ""), ("b", cStr "x")]
 -- >>> let tags' = getAllDefaultTags
 --
 -- >>> import Data.Time.Clock (getCurrentTime)
@@ -153,7 +153,7 @@ nowTag ctx' _ token tokens =
             (x:_) -> resolveCtx ctx' x
 
         format = case format' of
-            Just (CStr x) -> x
+            Just (CStr _ x) -> x
             _ -> "%Y-%m-%d %H:%I:%S"
 
     in
@@ -174,7 +174,7 @@ nowTag ctx' _ token tokens =
 -- >>> import Tpll.Context (ctx)
 -- >>> import Tpll.Tags.Default (getAllDefaultTags)
 -- >>>
--- >>> let ctx' = ctx [("list", CList [CInt 1, CInt 2, CInt 3, CInt 5])]
+-- >>> let ctx' = ctx [("list", cList [cInt 1, cInt 2, cInt 3, cInt 5])]
 -- >>> let tags' = getAllDefaultTags
 --
 -- >>> parseString ctx' tags' "{% for x in list %}{{ x }},{% endfor %}"
@@ -224,15 +224,15 @@ forTagEmpty ctx' (token:tokens) =
 --
 -- Examples:
 --
--- >>> let ctx' = ctx [("foo", CStr "bar")]
--- >>> let lst = CList [CInt 1, CInt 2, CInt 3]
+-- >>> let ctx' = ctx [("foo", cStr "bar")]
+-- >>> let lst = cList [cInt 1, cInt 2, cInt 3]
 -- >>> let ctxstack = forTagStack ctx' "i" lst
 -- >>> length ctxstack
 -- 3
 forTagStack :: Context -> String -> ContextValue -> [Context]
 forTagStack ctx' key val =
     case val of
-        (CList lst) ->
+        (CList _ lst) ->
             map (\(a) -> insert key a ctx') lst
         _ ->
             []
@@ -330,5 +330,6 @@ getAllDefaultTags =
         ("upper", upperFilter),
         ("lower", lowerFilter),
         ("capfirst", capFirstFilter),
-        ("first", firstFilter)
+        ("first", firstFilter),
+        ("safe", safeFilter)
     ]

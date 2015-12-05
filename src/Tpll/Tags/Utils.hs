@@ -11,7 +11,7 @@ module Tpll.Tags.Utils
 where
 
 
-import Tpll.Context (Context, ContextValue(CInt), ctx, resolveCtx, ctxToString)
+import Tpll.Context (Context, ContextValue(CInt), cInt, ctx, resolveCtx, ctxToString)
 import Tpll.Tags (Tags(Tags), Filter, tags)
 
 
@@ -25,9 +25,9 @@ import Data.List.Split (splitOn)
 --
 -- Examples:
 --
--- >>> let ctx' = ctx [("a", CInt 1)]
+-- >>> let ctx' = ctx [("a", cInt 1)]
 -- >>> let tags' = tags [] []
--- >>> let [Just (CInt 1), Nothing] = resolveParts ctx' tags' ["a", "b"]
+-- >>> let [Just (CInt False 1), Nothing] = resolveParts ctx' tags' ["a", "b"]
 resolveParts :: Context -> Tags -> [String] -> [Maybe ContextValue]
 resolveParts ctx' tags' =
     map (resolveValue ctx' tags')
