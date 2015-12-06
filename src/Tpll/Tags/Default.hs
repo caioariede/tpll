@@ -15,7 +15,7 @@ import Tpll.Tokenizer (Token(Tag, Variable, Text, Comment, content, line, raw))
 import Tpll.Tags (TagAction(Render, RenderBlock), Tags, tags)
 import Tpll.Tags.Utils (resolveParts)
 import Tpll.Tags.DefaultFilters (lowerFilter, upperFilter, capFirstFilter,
-    firstFilter, safeFilter)
+    titleFilter, firstFilter, safeFilter)
 
 
 import Prelude hiding (lookup)
@@ -330,6 +330,7 @@ getAllDefaultTags =
         ("upper", upperFilter),
         ("lower", lowerFilter),
         ("capfirst", capFirstFilter),
+        ("title", titleFilter),
         ("first", firstFilter),
         ("safe", safeFilter)
     ]

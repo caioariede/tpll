@@ -5,7 +5,8 @@ Description : A collection of default template filters
 
 module Tpll.Tags.DefaultFilters
 (
-    upperFilter, lowerFilter, capFirstFilter, firstFilter, safeFilter
+    upperFilter, lowerFilter, capFirstFilter, titleFilter ,firstFilter,
+    safeFilter
 )
 where
 
@@ -99,6 +100,33 @@ capFirstFilter _ val =
             Just (CStr safe (toUpper x : xs))
         _ ->
             Nothing
+
+
+-- | @{{ arg|title }}@
+--
+-- Capitalizes the first character of each words.
+--
+-- __Examples:__
+--
+-- >>> import Tpll.Parser (parseString)
+-- >>> import Tpll.Context (ctx, cStr)
+-- >>> import Tpll.Tags.Default (getAllDefaultTags)
+-- >>>
+-- >>> let ctx' = ctx [("x", cStr "this is a string.")]
+-- >>> let tags' = getAllDefaultTags
+--
+-- >>> parseString ctx' tags' "{{ x|title }}"
+-- "This Is A String."
+titleFilter :: Context -> Maybe ContextValue -> Maybe ContextValue
+titleFilter _ val =
+    case val of
+        Just (CStr safe str) ->
+            let title = unwords $ map (\(x:xs) -> toUpper x : xs) $ words str
+            in
+                Just (CStr safe title)
+        _ ->
+            Nothing
+
 
 
 -- | @{{ arg|first }}@
