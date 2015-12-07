@@ -10,20 +10,20 @@ window.onload = function () {pageLoad();setSynopsis("mini_Tpll-Parser.html");};
 </pre><pre class="screen"><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>let ctx' = ctx []
 </code></strong><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>parseString ctx' getAllDefaultTags &quot;foo{% firstof 2.0 %}bar&quot;
 </code></strong>&quot;foo2.0bar&quot;
-</pre><pre class="screen"><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>let ctx' = ctx [(&quot;bang&quot;, CStr &quot;&quot;), (&quot;bar&quot;, CInt 2)]
+</pre><pre class="screen"><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>let ctx' = ctx [(&quot;bang&quot;, cStr &quot;&quot;), (&quot;bar&quot;, cInt 2)]
 </code></strong><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>parseString ctx' getAllDefaultTags &quot;foo{% firstof bang %}bar&quot;
 </code></strong>&quot;foobar&quot;
 </pre><pre class="screen"><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>parseString ctx' getAllDefaultTags &quot;foo{% firstof bang bar %}bar&quot;
 </code></strong>&quot;foo2bar&quot;
-</pre><pre class="screen"><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>let ctx' = ctx [(&quot;list&quot;, CList [CInt 1, CInt 2, CInt 3, CInt 5])]
+</pre><pre class="screen"><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>let ctx' = ctx [(&quot;list&quot;, cList [cInt 1, cInt 2, cInt 3, cInt 5])]
 </code></strong><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>parseString ctx' getAllDefaultTags &quot;{% for x in list %}\n{{ x }}{% endfor %}&quot;
 </code></strong>&quot;\n1\n2\n3\n5&quot;
-</pre><pre class="screen"><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>let ctx' = ctx [(&quot;list&quot;, CList [CStr &quot;a&quot;, CStr &quot;b&quot;])]
+</pre><pre class="screen"><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>let ctx' = ctx [(&quot;list&quot;, cList [cStr &quot;a&quot;, cStr &quot;b&quot;])]
 </code></strong><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>parseString ctx' getAllDefaultTags &quot;{% for x in list %}\n{{ x|upper }}{% endfor %}&quot;
 </code></strong>&quot;\nA\nB&quot;
-</pre></div></div><div class="top"><p class="src"><a name="v:parseTokens" class="def">parseTokens</a> :: <a href="Tpll-Context.html#t:Context">Context</a> -&gt; <a href="Tpll-Tags.html#t:Tags">Tags</a> -&gt; [<a href="Tpll-Tokenizer.html#t:Token">Token</a>] -&gt; [<a href="file:///usr/local/Cellar/ghc/7.10.2/share/doc/ghc/html/libraries/base-4.8.1.0/System-IO.html#t:IO">IO</a> <a href="file:///usr/local/Cellar/ghc/7.10.2/share/doc/ghc/html/libraries/base-4.8.1.0/Data-String.html#t:String">String</a>]</p><div class="doc"><p>Parse tokens</p><p>Examples:</p><pre class="screen"><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>let ctx' = ctx [(&quot;foo&quot;, CStr &quot;bar&quot;), (&quot;bar&quot;, CStr &quot;2&quot;)]
+</pre></div></div><div class="top"><p class="src"><a name="v:parseTokens" class="def">parseTokens</a> :: <a href="Tpll-Context.html#t:Context">Context</a> -&gt; <a href="Tpll-Tags.html#t:Tags">Tags</a> -&gt; [<a href="Tpll-Tokenizer.html#t:Token">Token</a>] -&gt; [<a href="file:///usr/local/Cellar/ghc/7.10.2/share/doc/ghc/html/libraries/base-4.8.1.0/System-IO.html#t:IO">IO</a> <a href="file:///usr/local/Cellar/ghc/7.10.2/share/doc/ghc/html/libraries/base-4.8.1.0/Data-String.html#t:String">String</a>]</p><div class="doc"><p>Parse tokens</p><p>Examples:</p><pre class="screen"><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>let ctx' = ctx [(&quot;foo&quot;, cStr &quot;bar&quot;), (&quot;bar&quot;, cStr &quot;2&quot;)]
 </code></strong><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>let tags' = tags [] []
-</code></strong><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>let Just (CStr r) = lookup &quot;foo&quot; ctx'
+</code></strong><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>let Just (CStr False r) = lookup &quot;foo&quot; ctx'
 </code></strong><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>r
 </code></strong>&quot;bar&quot;
 <code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>let [r] = parseTokens ctx' tags' [Variable { content = &quot;foo&quot;, line = 1, raw = &quot;{{ foo }}&quot; }]
