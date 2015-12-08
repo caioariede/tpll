@@ -81,13 +81,13 @@ This is an example of a ``RenderBlock`` action returned by the ``{% for ... %}``
 
         -- context stack
         [
-            ctx [("foo", CStr "bar"), ("item", CInt 1)],
-            ctx [("foo", CStr "bar"), ("item", CInt 2)],
-            ctx [("foo", CStr "bar"), ("item", CInt 3)],
+            ctx [("foo", cStr "bar"), ("item", cInt 1)],
+            ctx [("foo", cStr "bar"), ("item", cInt 2)],
+            ctx [("foo", cStr "bar"), ("item", cInt 3)],
         ],
 
         -- old context
-        ctx [("foo", CStr "bar")],
+        ctx [("foo", cStr "bar")],
 
         -- remaining tokens:
         -- {{ foo }}: {{ item }}; {% endfor %}

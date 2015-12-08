@@ -109,13 +109,13 @@ This is an example of a <code class="docutils literal highlight highlight-python
 
     <span class="c1">-- context stack</span>
     <span class="p">[</span>
-        <span class="n">ctx</span> <span class="p">[(</span><span class="s">&quot;foo&quot;</span><span class="p">,</span> <span class="kt">CStr</span> <span class="s">&quot;bar&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s">&quot;item&quot;</span><span class="p">,</span> <span class="kt">CInt</span> <span class="mi">1</span><span class="p">)],</span>
-        <span class="n">ctx</span> <span class="p">[(</span><span class="s">&quot;foo&quot;</span><span class="p">,</span> <span class="kt">CStr</span> <span class="s">&quot;bar&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s">&quot;item&quot;</span><span class="p">,</span> <span class="kt">CInt</span> <span class="mi">2</span><span class="p">)],</span>
-        <span class="n">ctx</span> <span class="p">[(</span><span class="s">&quot;foo&quot;</span><span class="p">,</span> <span class="kt">CStr</span> <span class="s">&quot;bar&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s">&quot;item&quot;</span><span class="p">,</span> <span class="kt">CInt</span> <span class="mi">3</span><span class="p">)],</span>
+        <span class="n">ctx</span> <span class="p">[(</span><span class="s">&quot;foo&quot;</span><span class="p">,</span> <span class="n">cStr</span> <span class="s">&quot;bar&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s">&quot;item&quot;</span><span class="p">,</span> <span class="n">cInt</span> <span class="mi">1</span><span class="p">)],</span>
+        <span class="n">ctx</span> <span class="p">[(</span><span class="s">&quot;foo&quot;</span><span class="p">,</span> <span class="n">cStr</span> <span class="s">&quot;bar&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s">&quot;item&quot;</span><span class="p">,</span> <span class="n">cInt</span> <span class="mi">2</span><span class="p">)],</span>
+        <span class="n">ctx</span> <span class="p">[(</span><span class="s">&quot;foo&quot;</span><span class="p">,</span> <span class="n">cStr</span> <span class="s">&quot;bar&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s">&quot;item&quot;</span><span class="p">,</span> <span class="n">cInt</span> <span class="mi">3</span><span class="p">)],</span>
     <span class="p">],</span>
 
     <span class="c1">-- old context</span>
-    <span class="n">ctx</span> <span class="p">[(</span><span class="s">&quot;foo&quot;</span><span class="p">,</span> <span class="kt">CStr</span> <span class="s">&quot;bar&quot;</span><span class="p">)],</span>
+    <span class="n">ctx</span> <span class="p">[(</span><span class="s">&quot;foo&quot;</span><span class="p">,</span> <span class="n">cStr</span> <span class="s">&quot;bar&quot;</span><span class="p">)],</span>
 
     <span class="c1">-- remaining tokens:</span>
     <span class="c1">-- {{ foo }}: {{ item }}; {% endfor %}</span>

@@ -60,10 +60,10 @@
 </pre></div>
 </div>
 <p>With the following context:</p>
-<div class="highlight-haskell"><div class="highlight"><pre><span class="kr">import</span> <span class="nn">Tpll.Context</span> <span class="p">(</span><span class="nf">ctx</span><span class="p">,</span> <span class="kt">ContextValue</span><span class="p">(</span><span class="kt">CList</span><span class="p">,</span> <span class="kt">CStr</span><span class="p">,</span> <span class="kt">CInt</span><span class="p">))</span>
+<div class="highlight-haskell"><div class="highlight"><pre><span class="kr">import</span> <span class="nn">Tpll.Context</span> <span class="p">(</span><span class="nf">ctx</span><span class="p">,</span> <span class="nf">cList</span><span class="p">,</span> <span class="nf">cStr</span><span class="p">,</span> <span class="nf">cInt</span><span class="p">)</span>
 <span class="kr">import</span> <span class="nn">Tpll.Tags.Default</span> <span class="p">(</span><span class="nf">getAllDefaultTags</span><span class="p">)</span>
 
-<span class="kr">let</span> <span class="n">ctx&#39;</span> <span class="ow">=</span> <span class="n">ctx</span> <span class="p">[(</span><span class="s">&quot;list&quot;</span><span class="p">,</span> <span class="kt">CList</span> <span class="p">[</span><span class="kt">CStr</span> <span class="s">&quot;foo&quot;</span><span class="p">,</span> <span class="kt">CStr</span> <span class="s">&quot;bar&quot;</span><span class="p">,</span> <span class="kt">CInt</span> <span class="mi">42</span><span class="p">])]</span>
+<span class="kr">let</span> <span class="n">ctx&#39;</span> <span class="ow">=</span> <span class="n">ctx</span> <span class="p">[(</span><span class="s">&quot;list&quot;</span><span class="p">,</span> <span class="n">cList</span> <span class="p">[</span><span class="n">cStr</span> <span class="s">&quot;foo&quot;</span><span class="p">,</span> <span class="n">cStr</span> <span class="s">&quot;bar&quot;</span><span class="p">,</span> <span class="n">cInt</span> <span class="mi">42</span><span class="p">])]</span>
 
 <span class="nf">renderFile</span> <span class="s">&quot;test.html&quot;</span> <span class="n">ctx&#39;</span> <span class="n">getAllDefaultTags</span>
 </pre></div>

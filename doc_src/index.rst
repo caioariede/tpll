@@ -25,10 +25,10 @@ With the following context:
 
 .. code-block:: haskell
 
-    import Tpll.Context (ctx, ContextValue(CList, CStr, CInt))
+    import Tpll.Context (ctx, cList, cStr, cInt)
     import Tpll.Tags.Default (getAllDefaultTags)
 
-    let ctx' = ctx [("list", CList [CStr "foo", CStr "bar", CInt 42])]
+    let ctx' = ctx [("list", cList [cStr "foo", cStr "bar", cInt 42])]
 
     renderFile "test.html" ctx' getAllDefaultTags
 

@@ -13,7 +13,7 @@ Variables are surrounded by ``{{`` and ``}}`` like this::
 
 With the context of::
 
-    [("first_name", CStr "John"), ("last_name", CStr "Doe")]
+    [("first_name", cStr "John"), ("last_name", cStr "Doe")]
 
 This template renders to::
 
@@ -79,7 +79,7 @@ rendering everything until the ``endfor`` tag for each iteration.
 
 With the context of::
 
-    [("arg2", CList [(CInt 1, CInt 2, CInt 5)])]
+    [("arg2", cList [(cInt 1, cInt 2, cInt 5)])]
 
 This template renders to::
 
