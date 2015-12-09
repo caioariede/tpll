@@ -52,6 +52,7 @@ Will output:
    :maxdepth: 2
 
    intro
+   defaults
    extending
 
 
