@@ -4,8 +4,8 @@ Module      : Tpll.Tags
 
 module Tpll.Tags
 (
-    Tag,
-    Filter,
+    Tag, TagMap,
+    Filter, FilterMap,
     Tags(Tags),
     TagAction(Render, RenderBlock),
     tags
@@ -40,15 +40,17 @@ data TagAction =
 --
 -- Returns a `TagAction`.
 type Tag = Context -> Tags -> Token -> [Token] -> TagAction
+type TagMap = Map String Tag
 
 
 -- | Defines a template filter that accepts two arguments: `Context` and
 -- `ContextValue`.
-type Filter = Context -> Maybe ContextValue -> Maybe ContextValue
+type Filter = Context -> Maybe ContextValue -> Maybe ContextValue -> Maybe ContextValue
+type FilterMap = Map String Filter
 
 
 -- | Defines two maps containing template tags (`Tag`) and filters (`Filter`).
-data Tags = Tags (Map String Tag, Map String Filter)
+data Tags = Tags (TagMap, FilterMap)
 
 
 -- | Constructs the `Tags` containing template tags and filters.
