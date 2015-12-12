@@ -13,7 +13,7 @@ module Tpll.Tags.Default
 import Tpll.Context (Context, ctx, ContextValue(CStr, CInt, CDouble, CList, CAssoc), cStr, cList, cInt, resolveCtx, ctxToString)
 import Tpll.Tokenizer (Token(Tag, Variable, Text, Comment, content, line, raw))
 import Tpll.Tags (TagAction(Render, RenderBlock), Tags, tags)
-import Tpll.Tags.Utils (resolveParts)
+import Tpll.Tags.Utils (resolveParts, isFalse)
 import Tpll.Tags.DefaultFilters (lowerFilter, upperFilter, capFirstFilter,
     titleFilter, firstFilter, safeFilter, defaultFilter)
 
@@ -90,16 +90,10 @@ firstOfTag ctx' tags' token tokens =
 firstOfTag' :: Context -> [Maybe ContextValue] -> String
 firstOfTag' _ [] = ""
 firstOfTag' ctx' (x:xs) =
-    case x of
-        Just (CStr _ x) ->
-            if x == "" then
-                firstOfTag' ctx' xs
-            else
-                x
-        Nothing ->
-            firstOfTag' ctx' xs
-        _ ->
-            ctxToString x
+    if isFalse x then
+        firstOfTag' ctx' xs
+    else
+        ctxToString x
 
 
 -- | @{% now [optional format] %}@

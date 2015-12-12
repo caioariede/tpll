@@ -6,12 +6,17 @@ Description : Utility functions often used by template tags and filters
 module Tpll.Tags.Utils
 (
     resolveParts,
-    resolveValue
+    resolveValue,
+    isFalse
 )
 where
 
 
-import Tpll.Context (Context, ContextValue(CInt), cInt, ctx, resolveCtx, ctxToString)
+import Tpll.Context (
+    ContextValue(CStr, CInt, CInteger, CDouble, CList),
+    cStr, cInt, cInteger, cDouble, cList,
+    Context, ctx, resolveCtx, ctxToString)
+
 import Tpll.Tags (Tags(Tags), Filter, FilterMap, tags)
 
 
@@ -118,3 +123,39 @@ runFilters :: Context -> Maybe ContextValue -> [(Filter, Maybe ContextValue)] ->
 runFilters ctx' val [] = val
 runFilters ctx' val ((fn, arg):filters) =
     runFilters ctx' (fn ctx' val arg) filters
+
+
+-- | Check if the given ContextValue can be considered True or False
+--
+-- Examples:
+--
+-- >>> import Tpll.Context (cStr)
+--
+-- >>> isFalse (Just (cStr ""))
+-- True
+-- >>> isFalse (Just (cStr " "))
+-- False
+-- >>> isFalse (Just (cInt 0))
+-- True
+-- >>> isFalse (Just (cInt 1))
+-- False
+-- >>> isFalse (Just (cInteger 0))
+-- True
+-- >>> isFalse (Just (cInteger 1))
+-- False
+-- >>> isFalse (Just (cDouble 0.0))
+-- True
+-- >>> isFalse (Just (cDouble 0.1))
+-- False
+-- >>> isFalse (Just (cList []))
+-- True
+-- >>> isFalse (Just (cList [cInt 1]))
+-- False
+isFalse :: Maybe ContextValue -> Bool
+isFalse Nothing = True
+isFalse (Just (CStr _ "")) = True
+isFalse (Just (CInt _ 0)) = True
+isFalse (Just (CInteger _ 0)) = True
+isFalse (Just (CDouble _ 0.0)) = True
+isFalse (Just (CList _ [])) = True
+isFalse _ = False

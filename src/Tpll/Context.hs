@@ -6,7 +6,7 @@ Description : Functions to encapsulate values into contexts
 module Tpll.Context
 (
     Context,
-    ContextValue(CStr, CInt, CDouble, CList, CAssoc, isSafe),
+    ContextValue(CStr, CInt, CInteger, CDouble, CList, CAssoc, isSafe),
     cStr, cInt, cInteger, cDouble, cAssoc, cList,
     ctx,
     resolveCtx,

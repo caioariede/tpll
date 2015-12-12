@@ -12,6 +12,7 @@ where
 
 
 import Tpll.Context (Context, ContextValue(CStr, CList), isSafe)
+import Tpll.Tags.Utils (isFalse)
 
 
 import Data.Char (toUpper, toLower)
@@ -200,8 +201,7 @@ safeFilter _ val _ =
 -- "bar"
 defaultFilter :: Context -> Maybe ContextValue -> Maybe ContextValue -> Maybe ContextValue
 defaultFilter _ val arg =
-    case val of
-        Nothing ->
-           Just (CStr False "bar")
-        v ->
-            v
+    if isFalse val then
+        Just (CStr False "bar")
+    else
+        val
