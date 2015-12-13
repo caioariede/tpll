@@ -132,7 +132,7 @@ parseToken :: Context -> Tags -> [Token] -> ([Token], IO String)
 parseToken ctx' tags' (token:tokens) =
     case token of
         Variable { content = _, line = _ } ->
-            (tokens, return $ parseTokenVariable ctx' tags' token)
+            (tokens, parseTokenVariable ctx' tags' token)
         Text { content = content, line = _ } ->
             (tokens, return content)
         Tag { content = _, line = _ } ->
@@ -159,7 +159,7 @@ parseToken ctx' tags' (token:tokens) =
 -- >>> let tags' = getAllDefaultTags
 -- >>> parseTokenVariable ctx' tags' (Variable { content = "\"x Y z\"|upper|lower", line = 0, raw = "{{ \"x Y z\"|upper|lower }}" })
 -- "x y z"
-parseTokenVariable :: Context -> Tags -> Token -> String
+parseTokenVariable :: Context -> Tags -> Token -> IO String
 parseTokenVariable ctx' tags' (Variable { content = content, line = _ }) =
     ctxToString $ resolveValue ctx' tags' content
 

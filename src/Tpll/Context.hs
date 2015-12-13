@@ -6,8 +6,8 @@ Description : Functions to encapsulate values into contexts
 module Tpll.Context
 (
     Context,
-    ContextValue(CStr, CInt, CInteger, CDouble, CList, CAssoc, isSafe),
-    cStr, cInt, cInteger, cDouble, cAssoc, cList,
+    ContextValue(CStr, CInt, CInteger, CDouble, CList, CAssoc, CUTCTime, CIOUTCTime, CIOString, isSafe),
+    cStr, cInt, cInteger, cDouble, cAssoc, cList, cUTCTime, cIOUTCTime,
     ctx,
     resolveCtx,
     ctxToString
@@ -18,6 +18,7 @@ import Prelude hiding (lookup)
 import Data.Map.Strict (Map, fromList, lookup)
 import Data.Char (isDigit)
 import Data.List (isInfixOf)
+import Data.Time.Clock (UTCTime)
 import Text.Read (readMaybe)
 import Text.HTML.TagSoup.Entity (escapeXML)
 
@@ -34,14 +35,15 @@ import Text.HTML.TagSoup.Entity (escapeXML)
 -- CList [cInt 1, cStr "foo", cAssoc (cInt 2, cStr "bar")]
 -- @
 data ContextValue =
-    CStr        { isSafe :: Bool, str      :: String                       } |
-    CInt        { isSafe :: Bool, int      :: Int                          } |
-    CInteger    { isSafe :: Bool, integer  :: Integer                      } |
-    CDouble     { isSafe :: Bool, double   :: Double                       } |
-    CAssoc      { isSafe :: Bool, assoc    :: (ContextValue, ContextValue) } |
-    CList       { isSafe :: Bool, list     :: [ContextValue]               }
-
-    deriving (Eq)
+    CStr        { isSafe :: Bool, str       :: String                       } |
+    CInt        { isSafe :: Bool, int       :: Int                          } |
+    CInteger    { isSafe :: Bool, integer   :: Integer                      } |
+    CDouble     { isSafe :: Bool, double    :: Double                       } |
+    CAssoc      { isSafe :: Bool, assoc     :: (ContextValue, ContextValue) } |
+    CList       { isSafe :: Bool, list      :: [ContextValue]               } |
+    CUTCTime    { isSafe :: Bool, utctime   :: UTCTime                      } |
+    CIOUTCTime  { isSafe :: Bool, ioutctime :: IO UTCTime                   } |
+    CIOString   { isSafe :: Bool, iostring  :: IO String                    }
 
 
 cStr :: String -> ContextValue
@@ -66,6 +68,14 @@ cAssoc = CAssoc False
 
 cList :: [ContextValue] -> ContextValue
 cList = CList False
+
+
+cUTCTime :: UTCTime -> ContextValue
+cUTCTime = CUTCTime False
+
+
+cIOUTCTime :: IO UTCTime -> ContextValue
+cIOUTCTime = CIOUTCTime False
 
 
 -- | A HashMap that holds the context that is passed to the parser
@@ -175,18 +185,20 @@ resolveCtxNumber _ str =
 --
 -- >>> ctxToString (Just (cDouble 3.14))
 -- "3.14"
-ctxToString :: Maybe ContextValue -> String
+ctxToString :: Maybe ContextValue -> IO String
 ctxToString val =
     case val of
         Just (CStr True x) ->
-            x
+            return x
         Just (CStr False x) ->
-            escapeXML x
+            return $ escapeXML x
         Just (CInt _ x) ->
-            show x
+            return $ show x
         Just (CInteger _ x) ->
-            show x
+            return $ show x
         Just (CDouble _ x) ->
-            show x
+            return $ show x
+        Just (CIOString _ x) ->
+            x
         _ ->
-            ""
+            return ""

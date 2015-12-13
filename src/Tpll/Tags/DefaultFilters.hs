@@ -6,16 +6,18 @@ Description : A collection of default template filters
 module Tpll.Tags.DefaultFilters
 (
     upperFilter, lowerFilter, capFirstFilter, titleFilter ,firstFilter,
-    safeFilter, defaultFilter
+    safeFilter, defaultFilter, dateFilter,
 )
 where
 
 
-import Tpll.Context (Context, ContextValue(CStr, CList), isSafe)
-import Tpll.Tags.Utils (isFalse)
+import Tpll.Context (Context, ContextValue(CStr, CList, CUTCTime, CIOUTCTime, CIOString), isSafe)
+import Tpll.Tags.Utils (isFalse, formatUTCTime, formatIOUTCTime)
 
 
 import Data.Char (toUpper, toLower)
+import Data.Time.Clock (getCurrentTime)
+import Data.Time.Format (formatTime, defaultTimeLocale)
 
 
 -- | @{{ arg|upper }}@
@@ -205,3 +207,48 @@ defaultFilter _ val arg =
         Just (CStr False "bar")
     else
         val
+
+
+-- | @{{ arg|date:"format" }}@
+--
+-- Converts value to the given format.
+--
+-- __Examples:__
+--
+-- >>> import Tpll.Parser (parseString)
+-- >>> import Tpll.Context (ctx, cStr, cUTCTime, cIOUTCTime)
+-- >>> import Tpll.Tags.Default (getAllDefaultTags)
+-- >>>
+-- >>> import Data.Time.Calendar (fromGregorian)
+-- >>> import Data.Time.Clock
+-- >>>
+-- >>> let ioutctime = return $ UTCTime (fromGregorian 2011 12 16) (fromIntegral $ 12 * 3600)
+-- >>> let utctime = UTCTime (fromGregorian 2011 12 16) (fromIntegral $ 12 * 3600)
+--
+-- >>> let ctx' = ctx [("x", cIOUTCTime ioutctime), ("y", cUTCTime utctime)]
+-- >>> let tags' = getAllDefaultTags
+--
+-- >>> parseString ctx' tags' "{{ x|date }}"
+-- "2011-12-16 12:12:00"
+--
+-- >>> parseString ctx' tags' "{{ x|date:\"%Y-%m-%d\" }}"
+-- "2011-12-16"
+--
+-- >>> parseString ctx' tags' "{{ y|date }}"
+-- "2011-12-16 12:12:00"
+--
+-- >>> parseString ctx' tags' "{{ y|date:\"%Y-%m-%d\" }}"
+-- "2011-12-16"
+dateFilter :: Context -> Maybe ContextValue -> Maybe ContextValue -> Maybe ContextValue
+dateFilter _ val format =
+    case val of
+        Just (CIOUTCTime safe utctime) ->
+            let result = formatIOUTCTime utctime format
+            in
+                Just (CIOString safe result)
+        Just (CUTCTime safe utctime) ->
+            let result = formatUTCTime utctime format
+            in
+                Just (CStr safe result)
+        Nothing ->
+            Nothing

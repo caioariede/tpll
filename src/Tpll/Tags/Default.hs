@@ -13,15 +13,14 @@ module Tpll.Tags.Default
 import Tpll.Context (Context, ctx, ContextValue(CStr, CInt, CDouble, CList, CAssoc), cStr, cList, cInt, resolveCtx, ctxToString)
 import Tpll.Tokenizer (Token(Tag, Variable, Text, Comment, content, line, raw))
 import Tpll.Tags (TagAction(Render, RenderBlock), Tags, tags)
-import Tpll.Tags.Utils (resolveParts, isFalse)
+import Tpll.Tags.Utils (resolveParts, isFalse, formatIOUTCTime)
 import Tpll.Tags.DefaultFilters (lowerFilter, upperFilter, capFirstFilter,
-    titleFilter, firstFilter, safeFilter, defaultFilter)
+    titleFilter, firstFilter, safeFilter, defaultFilter, dateFilter)
 
 
 import Prelude hiding (lookup)
 import Control.Monad (liftM2)
 import Data.Time.Clock (getCurrentTime)
-import Data.Time.Format (formatTime, defaultTimeLocale)
 import Data.Map.Strict (lookup, insert)
 import Data.List (elemIndex)
 import Data.List.Split (splitOn)
@@ -84,11 +83,11 @@ firstOfTag ctx' tags' token tokens =
     let Tag { content = content, line = _ } = token
         (_, parts) = splitAt 1 $ words content
     in
-        Render (tokens, return $ firstOfTag' ctx' $ resolveParts ctx' tags' parts)
+        Render (tokens, firstOfTag' ctx' $ resolveParts ctx' tags' parts)
 
 
-firstOfTag' :: Context -> [Maybe ContextValue] -> String
-firstOfTag' _ [] = ""
+firstOfTag' :: Context -> [Maybe ContextValue] -> IO String
+firstOfTag' _ [] = return ""
 firstOfTag' ctx' (x:xs) =
     if isFalse x then
         firstOfTag' ctx' xs
@@ -146,14 +145,8 @@ nowTag ctx' _ token tokens =
             [] -> Nothing
             (x:_) -> resolveCtx ctx' x
 
-        format = case format' of
-            Just (CStr _ x) -> x
-            _ -> "%Y-%m-%d %H:%I:%S"
-
     in
-        let result = fmap (formatTime defaultTimeLocale format) getCurrentTime
-        in
-            Render ([], result)
+        Render ([], formatIOUTCTime getCurrentTime format')
 
 
 -- | @{% for x in list %} ... {% endfor %}@
@@ -327,5 +320,6 @@ getAllDefaultTags =
         ("title", titleFilter),
         ("first", firstFilter),
         ("safe", safeFilter),
-        ("default", defaultFilter)
+        ("default", defaultFilter),
+        ("date", dateFilter)
     ]

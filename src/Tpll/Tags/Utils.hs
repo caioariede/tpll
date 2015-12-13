@@ -7,7 +7,9 @@ module Tpll.Tags.Utils
 (
     resolveParts,
     resolveValue,
-    isFalse
+    isFalse,
+    formatUTCTime,
+    formatIOUTCTime
 )
 where
 
@@ -24,6 +26,9 @@ import Prelude hiding (lookup)
 import Data.Map.Strict (lookup)
 import Data.Maybe (mapMaybe)
 import Data.List.Split (splitOn)
+import Data.Time.Clock (getCurrentTime)
+import Data.Time.Format (formatTime, defaultTimeLocale)
+import Data.Time.Clock (UTCTime)
 
 
 -- | Resolve parts of a template tag
@@ -159,3 +164,41 @@ isFalse (Just (CInteger _ 0)) = True
 isFalse (Just (CDouble _ 0.0)) = True
 isFalse (Just (CList _ [])) = True
 isFalse _ = False
+
+
+-- | Formats a given UTCTime
+--
+-- __Examples:__
+--
+-- >>> import Data.Time.Calendar (fromGregorian)
+-- >>> import Data.Time.Clock
+-- >>>
+-- >>> let utctime = UTCTime (fromGregorian 2011 12 16) (fromIntegral $ 12 * 3600)
+-- >>> formatUTCTime utctime (Just (CStr False "%Y-%m-%d"))
+-- "2011-12-16"
+formatUTCTime :: UTCTime -> Maybe ContextValue -> String
+formatUTCTime utctime (Just (CStr _ format)) =
+    formatTime defaultTimeLocale format utctime
+formatUTCTime utctime _ =
+    let format = "%Y-%m-%d %H:%I:%S"
+    in
+        formatTime defaultTimeLocale format utctime
+
+
+-- | Formats a given IO UTCTime
+--
+-- __Examples:__
+--
+-- >>> import Data.Time.Calendar (fromGregorian)
+-- >>> import Data.Time.Clock
+-- >>>
+-- >>> let utctime = return $ UTCTime (fromGregorian 2011 12 16) (fromIntegral $ 12 * 3600)
+-- >>> formatIOUTCTime utctime (Just (CStr False "%Y-%m-%d"))
+-- "2011-12-16"
+formatIOUTCTime :: IO UTCTime -> Maybe ContextValue -> IO String
+formatIOUTCTime utctime (Just (CStr _ format)) =
+    fmap (formatTime defaultTimeLocale format) utctime
+formatIOUTCTime utctime _ =
+    let format = "%Y-%m-%d %H:%I:%S"
+    in
+        fmap (formatTime defaultTimeLocale format) utctime
