@@ -26,9 +26,8 @@ import Prelude hiding (lookup)
 import Data.Map.Strict (lookup)
 import Data.Maybe (mapMaybe)
 import Data.List.Split (splitOn)
-import Data.Time.Clock (getCurrentTime)
+import Data.Time.Clock (getCurrentTime, UTCTime)
 import Data.Time.Format (formatTime, defaultTimeLocale)
-import Data.Time.Clock (UTCTime)
 
 
 -- | Resolve parts of a template tag
