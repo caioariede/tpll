@@ -6,12 +6,12 @@ Description : A collection of default template filters
 module Tpll.Tags.DefaultFilters
 (
     upperFilter, lowerFilter, capFirstFilter, titleFilter ,firstFilter,
-    safeFilter, defaultFilter, dateFilter,
+    safeFilter, defaultFilter, dateFilter, addFilter
 )
 where
 
 
-import Tpll.Context (Context, ContextValue(CStr, CList, CUTCTime, CIOUTCTime, CIOString), isSafe)
+import Tpll.Context (Context, ContextValue(CInt, CDouble, CStr, CList, CUTCTime, CIOUTCTime, CIOString), isSafe)
 import Tpll.Tags.Utils (isFalse, formatUTCTime, formatIOUTCTime)
 
 
@@ -251,4 +251,61 @@ dateFilter _ val format =
             in
                 Just (CStr safe result)
         Nothing ->
+            Nothing
+
+
+-- | @{{ arg|add:1 }}@
+--
+-- Adds the argument to the value
+--
+-- __Examples:__
+--
+-- >>> import Tpll.Parser (parseString)
+-- >>> import Tpll.Context (ctx, cInt, cDouble, cStr)
+-- >>> import Tpll.Tags.Default (getAllDefaultTags)
+-- >>>
+--
+-- >>> let ctx' = ctx [("x", cInt 1), ("y", cStr "foo"), ("z", cDouble 1.0)]
+-- >>> let tags' = getAllDefaultTags
+--
+-- >>> parseString ctx' tags' "{{ x|add:1 }}"
+-- "2"
+--
+-- >>> parseString ctx' tags' "{{ y|add:\"bar\" }}"
+-- "foobar"
+--
+-- >>> parseString ctx' tags' "{{ z|add:2.14 }}"
+-- "3.14"
+--
+-- >>> parseString ctx' tags' "{{ z|add:2 }}"
+-- "3.0"
+--
+-- >>> parseString ctx' tags' "{{ y|add:2 }}"
+-- "foo"
+addFilter :: Context -> Maybe ContextValue -> Maybe ContextValue -> Maybe ContextValue
+addFilter _ val arg =
+    case arg of
+        Just (CInt _ x) ->
+            case val of
+                Just (CInt safe y) ->
+                    Just (CInt safe (x + y))
+                Just (CDouble safe y) ->
+                    Just (CDouble safe (fromIntegral x + y))
+                _ ->
+                    val
+        Just (CDouble _ x) ->
+            case val of
+                Just (CDouble safe y) ->
+                    Just (CDouble safe (x + y))
+                Just (CInt safe y) ->
+                    Just (CDouble safe (x + fromIntegral y))
+                _ ->
+                    val
+        Just (CStr _ x) ->
+            case val of
+                Just (CStr safe y) ->
+                    Just (CStr safe (y ++ x))
+                _ ->
+                    val
+        _ ->
             Nothing
