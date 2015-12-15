@@ -54,11 +54,13 @@ consumeTag ctx' tags' token tokens =
 -- >>> let Just (CStr False r) = lookup "foo" ctx'
 -- >>> r
 -- "bar"
--- >>> let [r] = parseTokens ctx' tags' [Variable { content = "foo", line = 1, raw = "{{ foo }}" }]
--- >>> r
+-- >>> let [a, b] = parseTokens ctx' tags' [Variable { content = "foo", line = 1, raw = "{{ foo }}" }, Text { content = "foo", line = 1, raw = "" }]
+-- >>> a
 -- "bar"
--- >>> let [r] = parseTokens ctx' tags' [Variable { content = "unknown", line = 1, raw = "{{ unknown }}" }]
--- >>> r
+-- >>> b
+-- "foo"
+-- >>> let [a] = parseTokens ctx' tags' [Variable { content = "unknown", line = 1, raw = "{{ unknown }}" }]
+-- >>> a
 -- ""
 parseTokens :: Context -> Tags -> [Token] -> [IO String]
 parseTokens ctx' tags' tokens =
@@ -72,51 +74,26 @@ parseTokens' ctx' tags' tokens acc =
         parseTokens' ctx' tags' newtokens (result:acc)
 
 
-renderBlock :: [Context] -> Tags -> [Token] -> String -> [IO String] -> ([Token], IO String)
-renderBlock [] _ _ _ acc =
-    ([], foldl1 (liftM2 (++)) $ reverse acc)
-renderBlock (ctx':ctxstack) tags' tokens untilToken acc =
-    let result = parseTokensUntil ctx' tags' tokens untilToken
-    in
-        renderBlock ctxstack tags' tokens untilToken (result ++ acc)
-
-
--- | Parse tokens until tag token
+-- | Render a block
 --
 -- Examples:
 --
--- >>> let ctx' = ctx [("foo", cStr "bar"), ("bar", cStr "2")]
+-- >>> let ctx1 = ctx [("foo", cStr "abc")]
+-- >>> let ctx2 = ctx [("foo", cStr "def")]
+-- >>>
 -- >>> let tags' = tags [] []
--- >>> let tokens = [Variable { content = "foo", line = 1, raw = "{{ foo }}" }, Tag { content = "x", line = 1, raw = "{% x %}" }, Variable { content = "bar", line = 2, raw = "{{ bar }}" }]
--- >>> let r = parseTokensUntil ctx' tags' tokens "x|bar"
--- >>> length r
--- 1
--- >>> head r
--- "bar"
-parseTokensUntil :: Context -> Tags -> [Token] -> String -> [IO String]
-parseTokensUntil ctx' tags' tokens untilToken =
-    parseTokensUntil' ctx' tags' tokens untilToken []
-
-
-parseTokensUntil' :: Context -> Tags -> [Token] -> String -> [IO String] -> [IO String]
-parseTokensUntil' _ _ [] untilToken acc =
-    reverse acc
-
-parseTokensUntil' ctx' tags' (token:tokens) untilToken acc =
-    case token of
-        Tag { content = c } ->
-            let currentToken = head $ words c
-            in
-                if currentToken =~ untilToken then
-                    acc
-                else
-                    let (newtokens, result) = parseToken ctx' tags' (token:tokens)
-                    in
-                        parseTokensUntil' ctx' tags' newtokens untilToken (result:acc)
-        _ ->
-            let (newtokens, result) = parseToken ctx' tags' (token:tokens)
-            in
-                parseTokensUntil' ctx' tags' newtokens untilToken (result:acc)
+-- >>> --- let tokens = [Variable { content = "foo", line = 1, raw = "{{ foo }}" }]
+-- >>> let tokens = [Text { content = "\n", line = 1, raw = "" }, Variable { content = "foo", line = 1, raw = "{{ foo }}" }]
+-- >>>
+-- >>> renderBlock [ctx1, ctx2] tags' tokens []
+-- "\nabc\ndef"
+renderBlock :: [Context] -> Tags -> [Token] -> [IO String] -> IO String
+renderBlock [] _ _ acc =
+    foldl1 (liftM2 (++)) acc
+renderBlock (ctx':ctxstack) tags' tokens acc =
+    let result = parseTokens ctx' tags' tokens
+    in
+        renderBlock ctxstack tags' tokens (acc ++ result)
 
 
 -- | Parse token
@@ -169,10 +146,12 @@ parseTokenTag ctx' tags' token tokens =
     let result = consumeTag ctx' tags' token tokens
     in
         case result of
-            RenderBlock (ctxstack, oldctx, newtokens, untilToken) ->
-                renderBlock ctxstack tags' newtokens untilToken []
-            Render (newtokens, render) ->
-                (newtokens, render)
+            RenderBlock (ctxstack, oldctx, tokens, rest) ->
+                let render = renderBlock ctxstack tags' tokens []
+                in
+                    (rest, render)
+            Render (rest, render) ->
+                (rest, render)
 
 
 -- | Parse string

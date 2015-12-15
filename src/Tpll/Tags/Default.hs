@@ -11,7 +11,7 @@ module Tpll.Tags.Default
 
 
 import Tpll.Context (Context, ctx, ContextValue(CStr, CInt, CDouble, CList, CAssoc), cStr, cList, cInt, resolveCtx, ctxToString)
-import Tpll.Tokenizer (Token(Tag, Variable, Text, Comment, content, line, raw))
+import Tpll.Tokenizer (Token(Tag, Variable, Text, Comment, content, line, raw), splitTokensAt)
 import Tpll.Tags (TagAction(Render, RenderBlock), Tags, tags)
 import Tpll.Tags.Utils (resolveParts, isFalse, formatIOUTCTime)
 import Tpll.Tags.DefaultFilters (lowerFilter, upperFilter, capFirstFilter,
@@ -25,6 +25,29 @@ import Data.Time.Clock (getCurrentTime)
 import Data.Map.Strict (lookup, insert)
 import Data.List (elemIndex)
 import Data.List.Split (splitOn)
+
+
+-- | @{% block name %} ... {% endblock %}@
+--
+-- Defines a block that can be overridden or extended. Works in conjunction
+-- with the @{% extends "template.html" %}@ template tag.
+--
+-- __Examples:__
+--
+-- >>> import Tpll.Parser (parseString)
+-- >>> import Tpll.Context (ctx)
+-- >>> import Tpll.Tags.Default (getAllDefaultTags)
+-- >>>
+-- >>> let ctx' = ctx []
+-- >>> let tags' = getAllDefaultTags
+--
+-- >>> parseString ctx' tags' "abra{% block content %}cada{% endblock %}bra"
+-- "abracadabra"
+blockTag :: Context -> Tags -> Token -> [Token] -> TagAction
+blockTag ctx' _ _ tokens =
+    let (tokens', rest) = splitTokensAt "endblock" tokens
+    in
+        RenderBlock ([ctx'], ctx', tokens', rest)
 
 
 -- | @{% comment %} ... {% endcomment %}@
@@ -173,7 +196,6 @@ nowTag ctx' _ token tokens =
 --
 -- >>> parseString ctx' tags' "{% for x in list %}{{ x }}{% empty %}foo{% endfor %}"
 -- "1235"
---
 forTag :: Context -> Tags -> Token -> [Token] -> TagAction
 forTag ctx' _ token tokens =
     let Tag { content = content, line = _ } = token
@@ -188,8 +210,10 @@ forTag ctx' _ token tokens =
                     case lookup arr ctx' of
                         Just lst ->
                             let ctxstack = forTagStack ctx' vars lst
+                                (blockTokens, _) = splitTokensAt "endfor|empty" tokens
+                                (_, rest) = splitTokensAt "endfor" tokens
                             in
-                                RenderBlock (ctxstack, ctx', tokens, "endfor|empty")
+                                RenderBlock (ctxstack, ctx', blockTokens, rest)
                         Nothing ->
                             forTagEmpty ctx' tokens
 
@@ -201,7 +225,9 @@ forTagEmpty ctx' (token:tokens) =
             let (tag:_) = words content
             in
                 if tag == "empty" then
-                    RenderBlock ([ctx'], ctx', tokens, "endfor")
+                    let (blockTokens, rest) = splitTokensAt "endfor" tokens
+                    in
+                        RenderBlock ([ctx'], ctx', blockTokens, rest)
                 else
                     forTagEmpty ctx' tokens
         _ ->
@@ -250,8 +276,9 @@ withTag ctx' _ token tokens =
         parts = tail $ words content
         kvs = map (splitOn "=") parts
         newCtx = withTagCtx ctx' kvs
+        (blockTokens, rest) = splitTokensAt "endwith" tokens
     in
-        RenderBlock ([newCtx], ctx', tokens, "endwith")
+        RenderBlock ([newCtx], ctx', blockTokens, rest)
 
 withTagCtx :: Context -> [[String]] -> Context
 withTagCtx ctx' [] = ctx'
@@ -308,6 +335,7 @@ verbatimTagRender (token:tokens) str =
 getAllDefaultTags :: Tags
 getAllDefaultTags =
     tags [
+        ("block", blockTag),
         ("comment", commentTag),
         ("firstof", firstOfTag),
         ("now", nowTag),

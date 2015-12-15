@@ -23,8 +23,9 @@ import Data.Map.Strict (Map, fromList)
 --
 -- The `Render` action returns a list containing the remaining tokens (those
 -- not consumed by the parser) and the string to be rendered.
+--
 -- The `RenderBlock` action returns a context list, the old context, a list
--- containing the remaining tokens and a "final" token.
+-- of tokens to be rendered and the list of remaining tokens.
 --
 -- The context list returned by the `RenderBlock` action can be used by loop
 -- tags, meaning that the block will be iterated over all contexts returned.
@@ -32,7 +33,7 @@ import Data.Map.Strict (Map, fromList)
 -- final token for the @{% for x in list %}@ tag is the @{% endfor %}@ tag.
 data TagAction =
     Render ([Token], IO String)                         |
-    RenderBlock ([Context], Context, [Token], String)
+    RenderBlock ([Context], Context, [Token], [Token])
 
 
 -- | Defines a template tag that accepts three arguments: `Context`, `Token`,

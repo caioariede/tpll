@@ -5,7 +5,7 @@ Description : Functions to transform strings in tokens
 
 module Tpll.Tokenizer
 (
-    tokenize,
+    tokenize, splitTokensAt,
     Token(Tag, Text, Comment, Variable, content, line, raw),
 ) where
 
@@ -175,3 +175,35 @@ getToken text ln =
             Just Tag { content = tagText text, line = ln, raw = text }
         _ ->
             Nothing
+
+
+-- | Split tokens at given token part
+--
+-- Examples:
+--
+-- >>> let a = Variable { content = "foo", line = 1, raw = "{{ foo }}" }
+-- >>> let b = Tag { content = "x", line = 1, raw = "{% x %}" }
+-- >>> let c = Variable { content = "bar", line = 2, raw = "{{ bar }}" }
+-- >>> let d = Text { content = "y", line = 2, raw = "" }
+-- >>>
+-- >>> let tokens = [a, b, c, d]
+-- >>> let ([a], [c, d]) = splitTokensAt "x|bar" tokens
+splitTokensAt :: String -> [Token] -> ([Token], [Token])
+splitTokensAt untilToken tokens =
+    splitTokensAt' untilToken tokens []
+
+splitTokensAt' :: String -> [Token] -> [Token] -> ([Token], [Token])
+splitTokensAt' untilToken [] before =
+    (reverse before, [])
+
+splitTokensAt' untilToken (token:tokens) before =
+    case token of
+        Tag { content = c } ->
+            let currentToken = head $ words c
+            in
+                if currentToken =~ untilToken then
+                    (reverse before, tokens)
+                else
+                    splitTokensAt' untilToken tokens (token:before)
+        _ ->
+            splitTokensAt' untilToken tokens (token:before)
