@@ -5,13 +5,13 @@ Description : A collection of default template filters
 
 module Tpll.Tags.DefaultFilters
 (
-    upperFilter, lowerFilter, capFirstFilter, titleFilter ,firstFilter,
-    safeFilter, defaultFilter, dateFilter, addFilter
+    upperFilter, lowerFilter, capFirstFilter, titleFilter, firstFilter,
+    safeFilter, defaultFilter, dateFilter, addFilter, lastFilter
 )
 where
 
 
-import Tpll.Context (Context, ContextValue(CInt, CDouble, CStr, CList, CUTCTime, CIOUTCTime, CIOString), isSafe)
+import Tpll.Context (Context, ContextValue(CInt, CDouble, CStr, CList, CAssoc, CUTCTime, CIOUTCTime, CIOString), isSafe)
 import Tpll.Tags.Utils (isFalse, formatUTCTime, formatIOUTCTime)
 
 
@@ -309,3 +309,39 @@ addFilter _ val arg =
                     val
         _ ->
             Nothing
+
+
+-- | @{{ arg|last }}@
+--
+-- Returns the last item in a list.
+--
+-- __Examples:__
+--
+-- >>> import Tpll.Parser (parseString)
+-- >>> import Tpll.Context (ctx, cInt, cDouble, cStr, cList, cAssoc)
+-- >>> import Tpll.Tags.Default (getAllDefaultTags)
+-- >>>
+--
+-- >>> let ctx' = ctx [("x", cList [cInt 1, cInt 2]), ("y", cStr "foo"), ("z", cAssoc (cInt 3, cInt 4))]
+-- >>> let tags' = getAllDefaultTags
+--
+-- >>> parseString ctx' tags' "{{ x|last }}"
+-- "2"
+--
+-- >>> parseString ctx' tags' "{{ y|last }}"
+-- "o"
+--
+-- >>> parseString ctx' tags' "{{ z|last }}"
+-- "4"
+--
+-- >>> parseString ctx' tags' "{{ unknown|last }}"
+-- ""
+lastFilter :: Context -> Maybe ContextValue -> Maybe ContextValue -> Maybe ContextValue
+lastFilter _ Nothing _ =
+    Nothing
+lastFilter _ (Just (CList _ lst)) _ =
+    Just (last lst)
+lastFilter _ (Just (CStr safe str)) _ =
+    Just (CStr safe [last str])
+lastFilter _ (Just (CAssoc _ (_, y))) _ =
+    Just y
