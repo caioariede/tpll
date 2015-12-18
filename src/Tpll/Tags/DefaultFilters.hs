@@ -6,18 +6,19 @@ Description : A collection of default template filters
 module Tpll.Tags.DefaultFilters
 (
     upperFilter, lowerFilter, capFirstFilter, titleFilter, firstFilter,
-    safeFilter, defaultFilter, dateFilter, addFilter, lastFilter
+    safeFilter, defaultFilter, dateFilter, addFilter, lastFilter, joinFilter,
 )
 where
 
 
-import Tpll.Context (Context, ContextValue(CInt, CDouble, CStr, CList, CAssoc, CUTCTime, CIOUTCTime, CIOString), isSafe)
+import Tpll.Context (Context, ContextValue(CInt, CDouble, CStr, CList, CAssoc, CUTCTime, CIOUTCTime, CIOString), isSafe, ctxToString)
 import Tpll.Tags.Utils (isFalse, formatUTCTime, formatIOUTCTime)
 
 
 import Data.Char (toUpper, toLower)
 import Data.Time.Clock (getCurrentTime)
 import Data.Time.Format (formatTime, defaultTimeLocale)
+import Control.Monad (liftM2)
 
 
 -- | @{{ arg|upper }}@
@@ -320,7 +321,6 @@ addFilter _ val arg =
 -- >>> import Tpll.Parser (parseString)
 -- >>> import Tpll.Context (ctx, cInt, cDouble, cStr, cList, cAssoc)
 -- >>> import Tpll.Tags.Default (getAllDefaultTags)
--- >>>
 --
 -- >>> let ctx' = ctx [("x", cList [cInt 1, cInt 2]), ("y", cStr "foo"), ("z", cAssoc (cInt 3, cInt 4))]
 -- >>> let tags' = getAllDefaultTags
@@ -345,3 +345,35 @@ lastFilter _ (Just (CStr safe str)) _ =
     Just (CStr safe [last str])
 lastFilter _ (Just (CAssoc _ (_, y))) _ =
     Just y
+
+
+-- | @{{ arg|join:"separator"" }}@
+--
+-- Joins a list of strings.
+--
+-- __Examples:__
+--
+-- >>> import Tpll.Parser (parseString)
+-- >>> import Tpll.Context (ctx, cInt, cDouble, cStr, cList, cAssoc)
+-- >>> import Tpll.Tags.Default (getAllDefaultTags)
+--
+-- >>> let ctx' = ctx [("foo", cList [cStr "foo", cStr "bar"])]
+-- >>> let tags' = getAllDefaultTags
+--
+-- >>> parseString ctx' tags' "{{ foo|join }}"
+-- "foobar"
+--
+-- >>> parseString ctx' tags' "{{ foo|join:\" -- \" }}"
+-- "foo -- bar"
+joinFilter :: Context -> Maybe ContextValue -> Maybe ContextValue -> Maybe ContextValue
+joinFilter _ val (Just (CStr _ sep)) =
+    case val of
+        Just (CList safe lst) ->
+            let strings = map (ctxToString . Just) lst
+                result = foldl1 (liftM2 (\a b -> a ++ sep ++ b)) strings
+            in
+                Just (CIOString safe result)
+        _ ->
+            Nothing
+joinFilter ctx' val _ =
+    joinFilter ctx' val (Just (CStr False ""))
