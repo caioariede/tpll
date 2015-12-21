@@ -7,7 +7,7 @@ module Tpll.Tags.DefaultFilters
 (
     upperFilter, lowerFilter, capFirstFilter, titleFilter, firstFilter,
     safeFilter, defaultFilter, dateFilter, addFilter, lastFilter, joinFilter,
-    ljustFilter
+    ljustFilter, rjustFilter
 )
 where
 
@@ -407,4 +407,34 @@ ljustFilter _ a@(Just (CStr safe str)) (Just (CInt _ n)) =
         else
             a
 ljustFilter _ _ _ =
+    Nothing
+
+
+-- | @{{ arg|rjust:10 }}@
+--
+-- Right-aligns the value in a field of a given width.
+--
+-- __Examples:__
+--
+-- >>> import Tpll.Parser (parseString)
+-- >>> import Tpll.Context (ctx, cStr, cInt)
+-- >>> import Tpll.Tags.Default (getAllDefaultTags)
+--
+-- >>> let ctx' = ctx [("a", cStr "foo"), ("b", cStr "haskell"), ("n", cInt 7)]
+-- >>> let tags' = getAllDefaultTags
+--
+-- >>> parseString ctx' tags' "{{ a|rjust:10 }}"
+-- "       foo"
+--
+-- >>> parseString ctx' tags' "{{ b|rjust:n }}"
+-- "haskell"
+rjustFilter :: Context -> Maybe ContextValue -> Maybe ContextValue -> Maybe ContextValue
+rjustFilter _ a@(Just (CStr safe str)) (Just (CInt _ n)) =
+    let strl = length str
+    in
+        if n > strl then
+            Just (CStr safe ((concat $ replicate (n - strl) " ") ++ str))
+        else
+            a
+rjustFilter _ _ _ =
     Nothing
