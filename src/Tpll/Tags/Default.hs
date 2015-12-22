@@ -16,7 +16,8 @@ import Tpll.Tags (TagAction(Render, RenderBlock), Tags, tags)
 import Tpll.Tags.Utils (resolveParts, isFalse, formatIOUTCTime)
 import Tpll.Tags.DefaultFilters (lowerFilter, upperFilter, capFirstFilter,
     titleFilter, firstFilter, safeFilter, defaultFilter, dateFilter,
-    addFilter, lastFilter, joinFilter, ljustFilter, rjustFilter)
+    addFilter, lastFilter, joinFilter, ljustFilter, rjustFilter,
+    truncatecharsFilter)
 
 
 import Prelude hiding (lookup)
@@ -355,5 +356,6 @@ getAllDefaultTags =
         ("last", lastFilter),
         ("join", joinFilter),
         ("ljust", ljustFilter),
-        ("rjust", rjustFilter)
+        ("rjust", rjustFilter),
+        ("truncatechars", truncatecharsFilter)
     ]

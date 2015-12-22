@@ -7,7 +7,7 @@ module Tpll.Tags.DefaultFilters
 (
     upperFilter, lowerFilter, capFirstFilter, titleFilter, firstFilter,
     safeFilter, defaultFilter, dateFilter, addFilter, lastFilter, joinFilter,
-    ljustFilter, rjustFilter
+    ljustFilter, rjustFilter, truncatecharsFilter
 )
 where
 
@@ -437,4 +437,37 @@ rjustFilter _ a@(Just (CStr safe str)) (Just (CInt _ n)) =
         else
             a
 rjustFilter _ _ _ =
+    Nothing
+
+
+-- | @{{ arg|truncatechars:10 }}@
+--
+-- Truncates a string if it is longer than the specified number of characters.
+-- Truncated strings will end with a translatable ellipsis sequence (”...”).
+--
+-- __Examples:__
+--
+-- >>> import Tpll.Parser (parseString)
+-- >>> import Tpll.Context (ctx, cStr, cInt)
+-- >>> import Tpll.Tags.Default (getAllDefaultTags)
+--
+-- >>> let ctx' = ctx [("a", cStr "foo"), ("b", cStr "haskell"), ("n", cInt 3)]
+-- >>> let tags' = getAllDefaultTags
+--
+-- >>> parseString ctx' tags' "{{ a|truncatechars:3 }}"
+-- "foo"
+--
+-- >>> parseString ctx' tags' "{{ b|truncatechars:n }}"
+-- "has..."
+truncatecharsFilter :: Context -> Maybe ContextValue -> Maybe ContextValue -> Maybe ContextValue
+truncatecharsFilter _ a@(Just (CStr safe str)) (Just (CInt _ n)) =
+    let strl = length str
+    in
+        if n < strl then
+            let (x, _) = splitAt n str
+            in
+                Just (CStr safe (x ++ "..."))
+        else
+            a
+truncatecharsFilter _ _ _ =
     Nothing
