@@ -114,3 +114,45 @@ Outputs:
 .. code-block:: html
 
     foo
+
+
+Default Filters
+===============
+
+first
+-----
+
+Syntax:
+
+``{% arg|first %}``
+
+Returns the first item in arg:
+
+.. code-block:: html
+
+    {{ "foo"|first }}
+
+Outputs:
+
+.. code-block:: html
+
+    f
+
+last
+----
+
+Syntax:
+
+``{% arg|last %}``
+
+Returns the last item in arg:
+
+.. code-block:: html
+
+    {{ "bar"|last }}
+
+Outputs:
+
+.. code-block:: html
+
+    r

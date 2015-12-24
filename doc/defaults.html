@@ -128,6 +128,35 @@ block if present:</p>
 </div>
 </div>
 </div>
+<div class="section" id="default-filters">
+<h2>Default Filters<a class="headerlink" href="#default-filters" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="first">
+<h3>first<a class="headerlink" href="#first" title="Permalink to this headline">¶</a></h3>
+<p>Syntax:</p>
+<p><code class="docutils literal highlight highlight-python">{% arg|first %}</code></p>
+<p>Returns the first item in arg:</p>
+<div class="highlight-html"><div class="highlight"><pre>{{ &quot;foo&quot;|first }}
+</pre></div>
+</div>
+<p>Outputs:</p>
+<div class="highlight-html"><div class="highlight"><pre>f
+</pre></div>
+</div>
+</div>
+<div class="section" id="last">
+<h3>last<a class="headerlink" href="#last" title="Permalink to this headline">¶</a></h3>
+<p>Syntax:</p>
+<p><code class="docutils literal highlight highlight-python">{% arg|last %}</code></p>
+<p>Returns the last item in arg:</p>
+<div class="highlight-html"><div class="highlight"><pre>{{ &quot;bar&quot;|last }}
+</pre></div>
+</div>
+<p>Outputs:</p>
+<div class="highlight-html"><div class="highlight"><pre>r
+</pre></div>
+</div>
+</div>
+</div>
 </div>
 
 
@@ -144,6 +173,11 @@ block if present:</p>
 <li><a class="reference internal" href="#firstof">firstof</a></li>
 <li><a class="reference internal" href="#now">now</a></li>
 <li><a class="reference internal" href="#for">for</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#default-filters">Default Filters</a><ul>
+<li><a class="reference internal" href="#first">first</a></li>
+<li><a class="reference internal" href="#last">last</a></li>
 </ul>
 </li>
 </ul>
