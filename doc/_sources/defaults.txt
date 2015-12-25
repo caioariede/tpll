@@ -119,12 +119,50 @@ Outputs:
 Default Filters
 ===============
 
+upper
+-----
+
+Syntax:
+
+``{{ arg|upper }}``
+
+Transforms arg to uppercase:
+
+.. code-block:: html
+
+    {{ "bar"|upper }}
+
+Outputs:
+
+.. code-block:: html
+
+    BAR
+
+lower
+-----
+
+Syntax:
+
+``{{ arg|lower }}``
+
+Transforms arg to lowercase:
+
+.. code-block:: html
+
+    {{ "FoOoO"|lower }}
+
+Outputs:
+
+.. code-block:: html
+
+    foooo
+
 first
 -----
 
 Syntax:
 
-``{% arg|first %}``
+``{{ arg|first }}``
 
 Returns the first item in arg:
 
@@ -143,7 +181,7 @@ last
 
 Syntax:
 
-``{% arg|last %}``
+``{{ arg|last }}``
 
 Returns the last item in arg:
 

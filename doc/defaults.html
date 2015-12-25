@@ -130,10 +130,36 @@ block if present:</p>
 </div>
 <div class="section" id="default-filters">
 <h2>Default Filters<a class="headerlink" href="#default-filters" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="upper">
+<h3>upper<a class="headerlink" href="#upper" title="Permalink to this headline">¶</a></h3>
+<p>Syntax:</p>
+<p><code class="docutils literal highlight highlight-python"><span class="p">{{</span> <span class="n">arg</span><span class="o">|</span><span class="n">upper</span> <span class="p">}}</span></code></p>
+<p>Transforms arg to uppercase:</p>
+<div class="highlight-html"><div class="highlight"><pre>{{ &quot;bar&quot;|upper }}
+</pre></div>
+</div>
+<p>Outputs:</p>
+<div class="highlight-html"><div class="highlight"><pre>BAR
+</pre></div>
+</div>
+</div>
+<div class="section" id="lower">
+<h3>lower<a class="headerlink" href="#lower" title="Permalink to this headline">¶</a></h3>
+<p>Syntax:</p>
+<p><code class="docutils literal highlight highlight-python"><span class="p">{{</span> <span class="n">arg</span><span class="o">|</span><span class="n">lower</span> <span class="p">}}</span></code></p>
+<p>Transforms arg to lowercase:</p>
+<div class="highlight-html"><div class="highlight"><pre>{{ &quot;FoOoO&quot;|lower }}
+</pre></div>
+</div>
+<p>Outputs:</p>
+<div class="highlight-html"><div class="highlight"><pre>foooo
+</pre></div>
+</div>
+</div>
 <div class="section" id="first">
 <h3>first<a class="headerlink" href="#first" title="Permalink to this headline">¶</a></h3>
 <p>Syntax:</p>
-<p><code class="docutils literal highlight highlight-python">{% arg|first %}</code></p>
+<p><code class="docutils literal highlight highlight-python"><span class="p">{{</span> <span class="n">arg</span><span class="o">|</span><span class="n">first</span> <span class="p">}}</span></code></p>
 <p>Returns the first item in arg:</p>
 <div class="highlight-html"><div class="highlight"><pre>{{ &quot;foo&quot;|first }}
 </pre></div>
@@ -146,7 +172,7 @@ block if present:</p>
 <div class="section" id="last">
 <h3>last<a class="headerlink" href="#last" title="Permalink to this headline">¶</a></h3>
 <p>Syntax:</p>
-<p><code class="docutils literal highlight highlight-python">{% arg|last %}</code></p>
+<p><code class="docutils literal highlight highlight-python"><span class="p">{{</span> <span class="n">arg</span><span class="o">|</span><span class="n">last</span> <span class="p">}}</span></code></p>
 <p>Returns the last item in arg:</p>
 <div class="highlight-html"><div class="highlight"><pre>{{ &quot;bar&quot;|last }}
 </pre></div>
@@ -176,6 +202,8 @@ block if present:</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#default-filters">Default Filters</a><ul>
+<li><a class="reference internal" href="#upper">upper</a></li>
+<li><a class="reference internal" href="#lower">lower</a></li>
 <li><a class="reference internal" href="#first">first</a></li>
 <li><a class="reference internal" href="#last">last</a></li>
 </ul>
