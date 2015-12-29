@@ -182,6 +182,34 @@ block if present:</p>
 </pre></div>
 </div>
 </div>
+<div class="section" id="ljust">
+<h3>ljust<a class="headerlink" href="#ljust" title="Permalink to this headline">¶</a></h3>
+<p>Syntax:</p>
+<p><code class="docutils literal highlight highlight-python"><span class="p">{{</span> <span class="n">arg</span><span class="o">|</span><span class="n">ljust</span> <span class="p">}}</span></code></p>
+<p>Left-aligns the value in a field of a given width:</p>
+<div class="highlight-html"><div class="highlight"><pre>{{ &quot;foo&quot;|ljust:10 }}
+</pre></div>
+</div>
+<p>Outputs:</p>
+<div class="highlight-html"><div class="highlight"><pre>foo.......
+</pre></div>
+</div>
+<p>Note: dots were used to represent whitespaces.</p>
+</div>
+<div class="section" id="rjust">
+<h3>rjust<a class="headerlink" href="#rjust" title="Permalink to this headline">¶</a></h3>
+<p>Syntax:</p>
+<p><code class="docutils literal highlight highlight-python"><span class="p">{{</span> <span class="n">arg</span><span class="o">|</span><span class="n">rjust</span> <span class="p">}}</span></code></p>
+<p>Right-aligns the value in a field of a given width:</p>
+<div class="highlight-html"><div class="highlight"><pre>{{ &quot;foo&quot;|rjust:10 }}
+</pre></div>
+</div>
+<p>Outputs:</p>
+<div class="highlight-html"><div class="highlight"><pre>.......foo
+</pre></div>
+</div>
+<p>Note: dots were used to represent whitespaces.</p>
+</div>
 </div>
 </div>
 
@@ -206,6 +234,8 @@ block if present:</p>
 <li><a class="reference internal" href="#lower">lower</a></li>
 <li><a class="reference internal" href="#first">first</a></li>
 <li><a class="reference internal" href="#last">last</a></li>
+<li><a class="reference internal" href="#ljust">ljust</a></li>
+<li><a class="reference internal" href="#rjust">rjust</a></li>
 </ul>
 </li>
 </ul>

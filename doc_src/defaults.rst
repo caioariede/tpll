@@ -194,3 +194,45 @@ Outputs:
 .. code-block:: html
 
     r
+
+ljust
+-----
+
+Syntax:
+
+``{{ arg|ljust }}``
+
+Left-aligns the value in a field of a given width:
+
+.. code-block:: html
+
+    {{ "foo"|ljust:10 }}
+
+Outputs:
+
+.. code-block:: html
+
+    foo.......
+
+Note: dots were used to represent whitespaces.
+
+rjust
+-----
+
+Syntax:
+
+``{{ arg|rjust }}``
+
+Right-aligns the value in a field of a given width:
+
+.. code-block:: html
+
+    {{ "foo"|rjust:10 }}
+
+Outputs:
+
+.. code-block:: html
+
+    .......foo
+
+Note: dots were used to represent whitespaces.
